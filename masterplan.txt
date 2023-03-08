@@ -74,7 +74,7 @@ I want to have a ship that flies around, scrolling background and simple shootin
 
 1. Performance Test
    - How many bullets can we even make?
-     Around 750?
+     Around 750? (500 Bullets Budet!!)
    - How much performance does background eat?
      A loooot!
 
