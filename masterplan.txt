@@ -1,0 +1,90 @@
+Who is this game for?
+----------------------
+
+General Audiences
+- Huge
+- Difficult to convince
+- Want guidance
+- Spreading the gospel
+
+Enthusiasts
+- Just a few
+- Easy to convince
+- Pet issues
+- Stiff challenge
+- Preaching to the choir
+
+Is this all really true?
+
+Basics are important!
+
+Onboarding
+ - Yes!
+ - Missions? Progression?
+ - Late Problem
+
+Scoring
+ - Ok
+ - Good problem to have
+ - Longevity not a Pico-8 strong suit
+ - Sequel / Expansion / Black Label
+ - Late Problem
+
+Difficulty
+ - Oooof
+ - Multiple difficulty levels?
+ - Rank?
+ - Sequel / Expansion / Black Label
+ - Late Problem
+
+Goal: One Evening Game
+ - Lower End: Make it past the first boss
+ - Hig End: 1CC and 1CC on spicy
+
+"I did this!"
+"This was cool!"
+"I didn't know Pico-8 can do this!"
+
+Questions
+----------
+- Length?
+  - One level!
+  - But long?
+
+- Classic or Bullet Hell?
+  - Can we even do Bullet Hell?
+    - Yes!
+
+- Sprite Space!
+  - Background!
+  - Big Enemy Sprites!
+  - Explosions?
+
+- Gameplay
+  - ???
+  - I don't think we need a bomb
+  - I don't want upgrades
+
+- How do we spawn enemies?
+- How do we program enemy behavior?
+- How do we make bullet patterns?
+
+FIRST GOAL: Figure out the basics!!
+I want to have a ship that flies around, scrolling background and simple shooting that feels nice
+
+1. Performance Test
+   - How many bullets can we even make?
+     Around 750?
+   - How much performance does background eat?
+     A loooot!
+
+2. Scrolling Prototype
+   - How long of a level can we even make?
+   - Scrolling speed?
+   - We have to create our own tileset
+
+3. Weapons & Movement Prototype
+   - Can we make basic movement and shooting feel nice?
+
+4. Explosion Prototype
+   - Can we make a juicy procedural explosion
