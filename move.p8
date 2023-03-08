@@ -2,72 +2,77 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 -- t: make basic movement feel nice
--- t: normalized diagonals
+--    ❎: fixed cobblestoning
+--    ❎: what is a good movement speed
+--    t: do banking
+
 -- t: make shooting feel nice!
 
-
--- 0 - stop
--- 1 - left
--- 2 - right
---3  - l+r = stop
--- 4 - up
--- 5  - diag l/u
--- 6  - diag r/u
---7  - l+u+r = u
--- 8 - down
--- 9  - diag l/d
--- 10 - diag r/d
---11 - l+d+r = d
---12 - u+d = stop
---13 - l+u+d = l
---14 - r+u+d = r
-
------
--- 1 - ⬅️
--- 2 - ➡️
--- 3 - ⬆️
--- 4 - ⬇️
-
--- 5 - ⬅️⬆️
--- 6 - ⬆️➡️
--- 7 - ➡️⬇️
--- 8 - ⬅️⬇️
+-- x: normalized diagonals
 
 butarr={1,2,0,3,5,6,3,4,8,7,4,0,1,2,0}
 
-dirx={-1,1, 0,0, -1, 1,1,-1 }
-diry={ 0,0,-1,1, -1,-1,1,1 }
+dirx={-1,1, 0,0, -0.7, 0.7,0.7,-0.7}
+diry={ 0,0,-1,1, -0.7,-0.7,0.7,0.7}
 
 butarr[0]=0
 
+shiparr={1,3,5,7,9}
+shipspr=3.5
+
 function _init()
  px,py=64,64
- spd=0.3
+ spd=1.4
+ lastdir=0
+ 
  cls(0)
 end
 
 function _draw()
  cls(12)
- --spr(5,px,py,2,2)
- pset(px,py,8)
+ spr(shiparr[flr(shipspr)],px,py,2,2)
+ --pset(px,py,8)
  
  local btnv=btn()&0b1111
  print(btn(),5,5,7)
  print(btnv,5,11,7)
  print(butarr[btnv],5,17,7)
- 
- if butarr[btnv]>=5 then
-  print("diaginal",5,23,7)
- end
+ print(shipspr,5,23,7)
 end
 
 function _update60()
  local dir=butarr[btn()&0b1111]
+ 
+ if lastdir!=dir and dir>=5 then
+  --anti-cobblestone
+  px=flr(px)+0.5
+  py=flr(py)+0.5
+ end
+ 
+ local dshipspr=3.5
+ 
  if dir>0 then
   px+=dirx[dir]*spd
   py+=diry[dir]*spd
+  
+  if dirx[dir]<0 then
+   dshipspr=1
+  elseif dirx[dir]>0 then
+   dshipspr=5.95
+  end
  end
  
+ local bankspd=0.5
+  
+ if dshipspr<shipspr then
+  shipspr-=bankspd
+ elseif dshipspr>shipspr then
+  shipspr+=bankspd
+ end
+ 
+ shipspr=mid(1,shipspr,5.95)
+ 
+ lastdir=dir
 end
 __gfx__
 00000000000000011000000000000001100000000000000110000000000000011000000000000001100000000000000000000000000000000000000000000000

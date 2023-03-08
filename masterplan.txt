@@ -73,18 +73,29 @@ FIRST GOAL: Figure out the basics!!
 I want to have a ship that flies around, scrolling background and simple shooting that feels nice
 
 1. Performance Test
-   - How many bullets can we even make?
-     Around 750? (500 Bullets Budet!!)
-   - How much performance does background eat?
-     A loooot!
+   Q: How many bullets can we even make?
+   A:  Around 750? (500 Bullets Budet!!)
+   
+   Q: How much performance does background eat?
+   A:  A loooot! (25%)
 
 2. Scrolling Prototype
-   - How long of a level can we even make?
-   - Scrolling speed?
-   - We have to create our own tileset
+   Q: How long of a level can we even make?
+   A: 6 Minites and we have the tech
+
+   Q: Scrolling speed?
+   A: 0.2 - 0.3
 
 3. Weapons & Movement Prototype
-   - Can we make basic movement and shooting feel nice?
+   Task: Make basic movement feel nice
+   Task: Normalized Diagonals
+   Task: Make shooting feel nice!
 
 4. Explosion Prototype
-   - Can we make a juicy procedural explosion
+   Task: Make a juicy procedural explosion
+
+5. Building the Level
+   Task: Make a level
+   Task: Makle a compact tileset
+   Task: [secret tech 1]
+   Task: [secret tech 2]
