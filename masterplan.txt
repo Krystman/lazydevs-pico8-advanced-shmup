@@ -87,9 +87,9 @@ I want to have a ship that flies around, scrolling background and simple shootin
    A: 0.2 - 0.3
 
 3. Weapons & Movement Prototype
-   Task: Make basic movement feel nice
-   Task: Normalized Diagonals
-   Task: Make shooting feel nice!
+   Done: Make basic movement feel nice
+   Done: Normalized Diagonals
+   Done: Make shooting feel nice!
 
 4. Explosion Prototype
    Task: Make a juicy procedural explosion
