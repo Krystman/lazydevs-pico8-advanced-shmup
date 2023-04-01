@@ -90,32 +90,43 @@ function blob(p)
  for i=1,#thk do
   fillp(pat[i])
   circfill(flr(p.x),flr(p.y)-thk[i],
-           myr-thk[i],154)
+           myr-thk[i],p.c)
 
  end
  fillp()
  
  --★
  if myr==1 then
-  line(p.x,p.y-1,p.x,p.y,154)
+  line(p.x,p.y-1,p.x,p.y,p.c)
  elseif myr==2 then
-  rectfill(p.x-1,p.y-2,p.x+1,p.y,154)
+  rectfill(p.x-1,p.y-2,p.x+1,p.y,p.c)
  end
- 
  
 end
 -->8
 function explode(ex,ey)
+ sfx(0)
  add(parts,{
   x=ex,
   y=ey,
   r=17,
-  maxage=2
+  maxage=2,
+  c=119,
+  ctab={119,167}
  })
  
- grape(ex,ey,2,13,1,"return")
- grape(ex-rnd(5),ey-5,10,20,1,"return")
- grape(ex+rnd(5),ey-10,25,25,0.8,"fade") 
+ grape(ex,ey,2,13,1,
+       "return",{119,167,167,154},
+       0
+       )
+ grape(ex-rnd(5),ey-5,10,20,1,
+       "return",{167,154,169},
+       -0.2
+       )
+ grape(ex+rnd(5),ey-10,25,25,0.8,
+       "fade",{167,167,154,169,141,93},
+       -0.3
+       ) 
 end
 
 function dopart(p)
@@ -135,10 +146,25 @@ function dopart(p)
   end
   p.age+=1
   
+  --animate color
+  if p.ctab then
+   local i=p.age/p.maxage
+   i=mid(1,flr(1+i*#p.ctab),#p.ctab)
+   p.c=p.ctab[i]
+  end
+  
   --movement
   if p.tox then
    p.x+=(p.tox-p.x)/(4/p.spd)
    p.y+=(p.toy-p.y)/(4/p.spd)   
+  end
+  if p.sx then
+   p.x+=p.sx
+   p.y+=p.sy
+   if p.tox then
+    p.tox+=p.sx
+    p.toy+=p.sy
+   end
   end
   
   --size
@@ -146,21 +172,26 @@ function dopart(p)
    p.r+=(p.tor-p.r)/(5/p.spd)
   end
   
+  if p.sr then
+   p.r+=p.sr
+  end
+  
   if p.age>=p.maxage or p.r<0.5 then
-   if p.onend=="return" then
-    p.onend=nil
+   if p.onend=="return" then   
     p.maxage+=32000
     p.tox=p.ox
     p.toy=p.oy
-    p.tor=0
+    p.tor=nil
+    p.sr=-0.3
    elseif p.onend=="fade" then
-    p.onend=nil
     p.maxage+=32000
-    p.spd/=2
-    p.tor=0
+    p.tor=nil
+    p.sr=-0.1-rnd(0.3)
    else
     del(parts,p)
    end
+   p.ctab=nil
+   p.onend=nil
   end
  end
 
@@ -169,7 +200,10 @@ function dopart(p)
  --tox / toy 
 end
 
-function grape(ex,ey,ewait,emaxage,espd,eonend)
+function grape(ex,ey,ewait,
+               emaxage,espd,
+               eonend,ectab,
+               edrift)
  local spokes=6
  local ang=rnd()
  local step=1/spokes
@@ -188,10 +222,14 @@ function grape(ex,ey,ewait,emaxage,espd,eonend)
 	  tor=5,
 	  tox=ex+sin(myang)*dist,
 	  toy=ey+cos(myang)*dist,
+	  sx=0,
+	  sy=edrift,
 	  wait=ewait,
 	  maxage=emaxage,
 	  onend=eonend,
-	  spd=espd
+	  spd=espd,
+	  c=ectab[1],
+	  ctab=ectab
 	 })  
   
  end
@@ -200,10 +238,14 @@ function grape(ex,ey,ewait,emaxage,espd,eonend)
   y=ey,
   r=2,
   tor=7,
+	 sx=0,
+	 sy=edrift,
   wait=ewait,
   maxage=emaxage,
   onend=eonend,
-  spd=espd
+  spd=espd,
+  c=ectab[1],
+  ctab=ectab
  })  
 end
 __gfx__
@@ -213,3 +255,5 @@ __gfx__
 00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+12030000256402c6602f6602f65027640206401a630136300e6500d650106401866022620106400b6300a65010630146101062001620006100061000000000000000000000000000000000000000000000000000
