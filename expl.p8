@@ -11,6 +11,9 @@ __lua__
 
 --todo
 -- color
+-- size variation for grape
+-- age variation for grape
+-- sparks
 
 function _init()
  parts={}
@@ -28,6 +31,7 @@ function _draw()
  end
  
  print(t,1,1,7)
+ print(#parts,1,7,7)
  
 end
 
@@ -109,7 +113,9 @@ function explode(ex,ey)
   maxage=2
  })
  
- grape(ex,ey)
+ grape(ex,ey,2,13,1,"return")
+ grape(ex-rnd(5),ey-5,10,20,1,"return")
+ grape(ex+rnd(5),ey-10,25,25,0.8,"fade") 
 end
 
 function dopart(p)
@@ -122,40 +128,82 @@ function dopart(p)
  else
   --particle code
   p.age=p.age or 0
+  p.spd=p.spd or 1
+  if p.age==0 then
+   p.ox=p.x
+   p.oy=p.y
+  end
   p.age+=1
-
   
-  if p.age>=p.maxage then
-   del(parts,p)
+  --movement
+  if p.tox then
+   p.x+=(p.tox-p.x)/(4/p.spd)
+   p.y+=(p.toy-p.y)/(4/p.spd)   
+  end
+  
+  --size
+  if p.tor then
+   p.r+=(p.tor-p.r)/(5/p.spd)
+  end
+  
+  if p.age>=p.maxage or p.r<0.5 then
+   if p.onend=="return" then
+    p.onend=nil
+    p.maxage+=32000
+    p.tox=p.ox
+    p.toy=p.oy
+    p.tor=0
+   elseif p.onend=="fade" then
+    p.onend=nil
+    p.maxage+=32000
+    p.spd/=2
+    p.tor=0
+   else
+    del(parts,p)
+   end
   end
  end
 
- --age
- --maxage
+ --sx/sy
  
+ --tox / toy 
 end
 
-function grape(ex,ey)
+function grape(ex,ey,ewait,emaxage,espd,eonend)
  local spokes=6
  local ang=rnd()
  local step=1/spokes
- local dist=8
+ 
  
  for i=1,spokes do
   --spawn blobs
+  local myang=ang+step*i
+  local dist=8
+  local dist2=dist/2
+  
 	 add(parts,{
-	  x=ex+sin(ang+step*i)*dist,
-	  y=ey+cos(ang+step*i)*dist,
-	  r=5,
-	  maxage=120
+	  x=ex+sin(myang)*dist2,
+	  y=ey+cos(myang)*dist2,
+	  r=2,
+	  tor=5,
+	  tox=ex+sin(myang)*dist,
+	  toy=ey+cos(myang)*dist,
+	  wait=ewait,
+	  maxage=emaxage,
+	  onend=eonend,
+	  spd=espd
 	 })  
   
  end
  add(parts,{
   x=ex,
   y=ey,
-  r=5,
-  maxage=120
+  r=2,
+  tor=7,
+  wait=ewait,
+  maxage=emaxage,
+  onend=eonend,
+  spd=espd
  })  
 end
 __gfx__
