@@ -19,6 +19,7 @@ function _init()
  parts={}
  slowmo=false
  t=0
+
 end
 
 function _draw()
@@ -26,13 +27,12 @@ function _draw()
  
  for p in all(parts) do
   if p.wait==nil then
-   blob(p)
+   p.draw(p)
   end
  end
  
  print(t,1,1,7)
  print(#parts,1,7,7)
- 
 end
 
 function _update60()
@@ -55,6 +55,11 @@ function _update60()
   end
  end
  
+end
+
+
+function rndrange(low,high)
+ return flr(rnd(high+1-low)+low)
 end
 -->8
 function blob(p)
@@ -103,10 +108,20 @@ function blob(p)
  end
  
 end
+
+function spark(p)
+ --47
+ 
+ for i=0,1 do
+  line(p.x+i,p.y,p.x-p.sx*2+i,p.y-p.sy*2,p.c)
+ end
+ 
+end
 -->8
 function explode(ex,ey)
  sfx(0)
  add(parts,{
+  draw=blob,
   x=ex,
   y=ey,
   r=17,
@@ -114,6 +129,9 @@ function explode(ex,ey)
   c=119,
   ctab={119,167}
  })
+ 
+ sparkblast(ex,ey,2)
+ sparkblast(ex,ey,8)
  
  grape(ex,ey,2,13,1,
        "return",{119,167,167,154},
@@ -143,12 +161,14 @@ function dopart(p)
   if p.age==0 then
    p.ox=p.x
    p.oy=p.y
+   p.r=p.r or 1
+   p.ctabv=p.ctabv or 0
   end
   p.age+=1
   
   --animate color
   if p.ctab then
-   local i=p.age/p.maxage
+   local i=(p.age+p.ctabv)/p.maxage
    i=mid(1,flr(1+i*#p.ctab),#p.ctab)
    p.c=p.ctab[i]
   end
@@ -165,13 +185,17 @@ function dopart(p)
     p.tox+=p.sx
     p.toy+=p.sy
    end
+   
+   if p.drag then
+    p.sx*=p.drag
+    p.sy*=p.drag
+   end
   end
   
   --size
   if p.tor then
    p.r+=(p.tor-p.r)/(5/p.spd)
   end
-  
   if p.sr then
    p.r+=p.sr
   end
@@ -194,10 +218,6 @@ function dopart(p)
    p.onend=nil
   end
  end
-
- --sx/sy
- 
- --tox / toy 
 end
 
 function grape(ex,ey,ewait,
@@ -212,14 +232,15 @@ function grape(ex,ey,ewait,
  for i=1,spokes do
   --spawn blobs
   local myang=ang+step*i
-  local dist=8
+  local dist=7+rnd(3)
   local dist2=dist/2
   
 	 add(parts,{
+	  draw=blob,
 	  x=ex+sin(myang)*dist2,
 	  y=ey+cos(myang)*dist2,
 	  r=2,
-	  tor=5,
+	  tor=rndrange(4,7),
 	  tox=ex+sin(myang)*dist,
 	  toy=ey+cos(myang)*dist,
 	  sx=0,
@@ -229,11 +250,13 @@ function grape(ex,ey,ewait,
 	  onend=eonend,
 	  spd=espd,
 	  c=ectab[1],
-	  ctab=ectab
+	  ctab=ectab,
+	  ctabv=rnd(5)
 	 })  
   
  end
  add(parts,{
+  draw=blob,
   x=ex,
   y=ey,
   r=2,
@@ -247,6 +270,27 @@ function grape(ex,ey,ewait,
   c=ectab[1],
   ctab=ectab
  })  
+end
+
+function sparkblast(ex,ey,ewait)
+ local ang=rnd()
+ 
+ for i=1,6 do
+  local ang2=ang+rnd(0.5)
+  local spd=rndrange(4,8)
+	 add(parts,{
+	  draw=spark,
+	  x=ex,
+	  y=ey,
+	  c=10,
+	  ctab={7,10},
+	  sx=sin(ang2)*spd,
+	  sy=cos(ang2)*spd,
+	  drag=0.8,
+	  wait=ewait,
+	  maxage=rndrange(8,13)
+	 })
+ end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

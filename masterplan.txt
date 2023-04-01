@@ -92,7 +92,7 @@ I want to have a ship that flies around, scrolling background and simple shootin
    Done: Make shooting feel nice!
 
 4. Explosion Prototype
-   Task: Make a juicy procedural explosion
+   Done: Make a juicy procedural explosion
 
 5. Building the Level
    Task: Make a level
