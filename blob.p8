@@ -50,30 +50,40 @@ function blob(p)
   myr*0.15,
   myr*0.3
  }
- local col={
-  2,
-  9,
-  10,
-  7
+ local pat={
+  0b1111111111111111,
+  0b1011010010101101,
+  0b1000000000000000,
+  0,
  }
  
- if myr<=5 then
+ --★
+ if myr<=2 then 
+  pat={0b1111111111111111}
+  thk={0}
+ elseif myr<=5 then
   deli(thk,4)
-  deli(col,2)
-  
   deli(thk,2)
-  deli(col,2)  
- elseif myr<=6 then  
-  deli(thk,3)
-  deli(col,2)  
- elseif myr<=8 then
-  deli(thk,4)
-  deli(col,2)
+  pat={0b1111111111111111,0}
+ elseif myr<=8 then  
+  deli(thk,3 and myr<=6 or 4)
+  deli(pat,3)
+  pat[2]=0b1010101010101010
  end
  
  for i=1,#thk do
+  fillp(pat[i])
   circfill(p.x,p.y-thk[i],
-           myr-thk[i],col[i])
+           myr-thk[i],154)
+
+ end
+ fillp()
+ 
+ --★
+ if myr==1 then
+  line(p.x,p.y-1,p.x,p.y,154)
+ elseif myr==2 then
+  rectfill(p.x-1,p.y-2,p.x+1,p.y,154)
  end
  
  
