@@ -3,44 +3,74 @@ version 41
 __lua__
 -- todo
 -- - color animate particles in draw
+-- - centralized animation system
 
-butarr={1,2,0,3,5,6,3,4,8,7,4,0,1,2,0}
-
-dirx={-1,1, 0,0, -0.7, 0.7,0.7,-0.7}
-diry={ 0,0,-1,1, -0.7,-0.7,0.7,0.7}
-
-butarr[0]=0
-
-shiparr={65,67,69,71,73}
-
-shipspr=0
-
-shots={}
-shotwait=0
-
-muzz={}
-
+--1639
+--1551
+--1543
+--1581
 
 function _init()
+ t=0
+ debug={}
+ 
+ butarr=split("1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1")
+ dirx=split("0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7")
+ diry=split("0, 0,0,-1,1, -0.7,-0.7,0.7,0.7")
+
+ --★
+ shiparr=split("65,67,69,71,73")
+ flamearr=split("76,77,78,77")
+   
+ mapsegs=split("3,3,3,3,3,2,1,0,1,7,6,5,10,4,11,6,11,11,5,9,10,8,1,0,15,14,1,13,12,19,19,18,17,16,18,17,16,17,16,19,22,21,20,27,26,25,23,24,3,3")
+ 
+ _upd=upd_menu
+ _drw=drw_menu
+end
+
+function startgame()
  px,py=64,64
  spd=1.4
  lastdir=0
- t=0
+ shipspr=0
 
  scroll=0
  xscroll=0
-  
- boss=false
- 
- mapsegs={3,3,3,3,3,2,1,0,1,7,6,5,10,4,11,6,11,11,5,9,10,8,1,0,15,14,1,13,12,19,19,18,17,16,18,17,16,17,16,19,22,21,20,27,26,25,23,24,3,3}
  mapsegi=0
  cursegs={}
  
+ boss=false
+
  parts={}
+ shots={}
+ shotwait=0
+ muzz={}
+
+ _upd=upd_game
+ _drw=drw_game
 end
 
 function _draw()
- cls(2)
+ _drw()
+ 
+ --★
+ cursor(4,4)
+ color(7)
+ for txt in all(debug) do
+  print(txt)
+ end
+end
+
+function _update60()
+ t+=1
+ _upd()
+end
+
+-->8
+--draw
+
+function drw_game()
+
  for seg in all(cursegs) do
   map(seg.x,seg.y,xscroll,scroll-seg.o,18,8)
  end
@@ -61,18 +91,22 @@ function _draw()
  
  --ship
  spr(shiparr[flr(shipspr*2.4+3.5)],px,py,2,2)
- local flamearr={76,77,78,77}
+ 
  local fframe=flamearr[t\3%4+1]
  spr(fframe,px+6,py+15)
  spr(fframe,px+3,py+15)
  
- print(#cursegs,5,5,7)
- print(scroll,5,11,7)
- print(xscroll,5,17,7)
- print(boss and "boss" or "noboss",5,23,7)
+ debug[1]=scroll
 end
 
-function _update60()
+function drw_menu()
+ map(19,8)
+end
+-->8
+--update
+
+function upd_game()
+
  --scrolling
  scroll+=0.2
  
@@ -102,22 +136,17 @@ function _update60()
  end
  
  --movement
- t+=1
- local dir=butarr[btn()&0b1111]
+ local dir=butarr[1+btn()&0b1111]
  
  if lastdir!=dir and dir>=5 then
   --anti-cobblestone
   px=flr(px)+0.5
   py=flr(py)+0.5
  end
- 
- local dshipspr=0
- 
- if dir>0 then
-  px+=dirx[dir]*spd
-  py+=diry[dir]*spd
-  dshipspr=mysgn(dirx[dir])
- end
+  
+ px+=dirx[dir]*spd
+ py+=diry[dir]*spd
+ local dshipspr=mysgn(dirx[dir])
   
  shipspr+=mysgn(dshipspr-shipspr)*0.15
  shipspr=mid(-1,shipspr,1)
@@ -148,10 +177,12 @@ function _update60()
  end
   
 end
--->8
---draw
--->8
---update
+
+function upd_menu()
+ if btnp(❎) then
+  startgame()
+ end
+end
 -->8
 --tools
 
@@ -241,11 +272,11 @@ function explode(ex,ey)
        "return",{119,167,167,154},
        0
        )
- grape(ex-rnd(5),ey-5,10,20,1,
+ grape(rndrange(ex-5,ex+5),ey-5,10,20,1,
        "return",{167,154,169},
        -0.2
        )
- grape(ex+rnd(5),ey-10,25,25,0.8,
+ grape(rndrange(ex-5,ex+5),ey-10,25,25,0.8,
        "fade",{167,167,154,169,141,93},
        -0.3
        ) 
