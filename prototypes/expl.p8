@@ -26,7 +26,7 @@ function _draw()
  cls(12)
  
  for p in all(parts) do
-  if p.wait==nil then
+  if p.age>=0 then
    p.draw(p)
   end
  end
@@ -127,6 +127,7 @@ function explode(ex,ey)
   r=17,
   maxage=2,
   c=119,
+  age=-2,
   ctab={119,167}
  })
  
@@ -145,78 +146,74 @@ function explode(ex,ey)
        "fade",{167,167,154,169,141,93},
        -0.3
        ) 
+
 end
 
 function dopart(p)
- if p.wait then
-  -- wait countodwn
-  p.wait-=1
-  if p.wait<=0 then
-   p.wait=nil
-  end
- else
-  --particle code
-  p.age=p.age or 0
+ -- age and wait
+ p.age=p.age or 0
+ if p.age==0 then
+  p.ox=p.x
+  p.oy=p.y
+  p.r=p.r or 1
+  p.ctabv=p.ctabv or 0
   p.spd=p.spd or 1
-  if p.age==0 then
-   p.ox=p.x
-   p.oy=p.y
-   p.r=p.r or 1
-   p.ctabv=p.ctabv or 0
-  end
-  p.age+=1
-  
-  --animate color
-  if p.ctab then
-   local i=(p.age+p.ctabv)/p.maxage
-   i=mid(1,flr(1+i*#p.ctab),#p.ctab)
-   p.c=p.ctab[i]
-  end
-  
-  --movement
+ end
+ p.age+=1
+ if p.age<=0 then return end
+ --particle code
+ 
+ 
+ --animate color
+ if p.ctab then
+  local i=(p.age+p.ctabv)/p.maxage
+  i=mid(1,flr(1+i*#p.ctab),#p.ctab)
+  p.c=p.ctab[i]
+ end
+ 
+ --movement
+ if p.tox then
+  p.x+=(p.tox-p.x)/(4/p.spd)
+  p.y+=(p.toy-p.y)/(4/p.spd)   
+ end
+ if p.sx then
+  p.x+=p.sx
+  p.y+=p.sy
   if p.tox then
-   p.x+=(p.tox-p.x)/(4/p.spd)
-   p.y+=(p.toy-p.y)/(4/p.spd)   
-  end
-  if p.sx then
-   p.x+=p.sx
-   p.y+=p.sy
-   if p.tox then
-    p.tox+=p.sx
-    p.toy+=p.sy
-   end
-   
-   if p.drag then
-    p.sx*=p.drag
-    p.sy*=p.drag
-   end
+   p.tox+=p.sx
+   p.toy+=p.sy
   end
   
-  --size
-  if p.tor then
-   p.r+=(p.tor-p.r)/(5/p.spd)
+  if p.drag then
+   p.sx*=p.drag
+   p.sy*=p.drag
   end
-  if p.sr then
-   p.r+=p.sr
+ end
+ 
+ --size
+ if p.tor then
+  p.r+=(p.tor-p.r)/(5/p.spd)
+ end
+ if p.sr then
+  p.r+=p.sr
+ end
+ 
+ if p.age>=p.maxage or p.r<0.5 then
+  if p.onend=="return" then   
+   p.maxage+=32000
+   p.tox=p.ox
+   p.toy=p.oy
+   p.tor=nil
+   p.sr=-0.3
+  elseif p.onend=="fade" then
+   p.maxage+=32000
+   p.tor=nil
+   p.sr=-0.1-rnd(0.3)
+  else
+   del(parts,p)
   end
-  
-  if p.age>=p.maxage or p.r<0.5 then
-   if p.onend=="return" then   
-    p.maxage+=32000
-    p.tox=p.ox
-    p.toy=p.oy
-    p.tor=nil
-    p.sr=-0.3
-   elseif p.onend=="fade" then
-    p.maxage+=32000
-    p.tor=nil
-    p.sr=-0.1-rnd(0.3)
-   else
-    del(parts,p)
-   end
-   p.ctab=nil
-   p.onend=nil
-  end
+  p.ctab=nil
+  p.onend=nil
  end
 end
 
@@ -245,7 +242,7 @@ function grape(ex,ey,ewait,
 	  toy=ey+cos(myang)*dist,
 	  sx=0,
 	  sy=edrift,
-	  wait=ewait,
+	  age=-ewait,
 	  maxage=emaxage,
 	  onend=eonend,
 	  spd=espd,
@@ -263,7 +260,7 @@ function grape(ex,ey,ewait,
   tor=7,
 	 sx=0,
 	 sy=edrift,
-  wait=ewait,
+  age=-ewait,
   maxage=emaxage,
   onend=eonend,
   spd=espd,
@@ -287,7 +284,7 @@ function sparkblast(ex,ey,ewait)
 	  sx=sin(ang2)*spd,
 	  sy=cos(ang2)*spd,
 	  drag=0.8,
-	  wait=ewait,
+	  age=-ewait,
 	  maxage=rndrange(8,13)
 	 })
  end

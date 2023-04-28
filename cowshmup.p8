@@ -1,22 +1,26 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
+-- goals
+-- to spawn an enemy
+-- the enemy to move somehow
+-- the enemy to shoot a bullet
+-- to be able to hit the enemy
+-- the enemy to explode
+-- to die if i get hit by bullet
+
+-- how do we conserve sprite space?
+-- - we need a tool to create mysprites
+-- - how do we deal with animations?
+
 -- todo
--- - color animate particles in draw
--- - centralized animation system
--- - scroll teleport bug
--- - redo the xscroll
 
--- - better split for mspr
-
---1639
---1551
---1543
---1581
 
 function _init()
  t=0
  debug={}
+  
+ myspr2=split2d("0,0,15,18,6,8|14,0,16,18,7,8|29,0,9,18,8,8,2,6|14,0,16,18,7,8,1,7|0,0,15,18,7,8,1,7|7,5,2,2,-1,3,1|5,5,3,2,0,3|38,0,4,16,3,0,2|42,0,3,16,2,0,2|45,0,2,16,1,0,2|47,0,5,10,4,9,2|52,0,6,14,5,13,2|58,0,7,13,6,12,2|65,0,8,14,7,13,2|125,7,3,6,1,0|122,0,3,7,1,0|125,0,3,8,1,0")
  
  myspr={
   {0,0,15,18,6,8},
@@ -62,7 +66,7 @@ function startgame()
  lastdir=0
  shipspr=0
 
- scroll=63
+ scroll=300
  xscroll=0
  mapsegi=0
  cursegs={}
@@ -104,7 +108,14 @@ function drw_game()
  end
  
  for p in all(parts) do
-  if p.wait==nil then
+  if p.age>=0 then
+			--animate color
+			if p.ctab then
+			 p.ctabv=p.ctabv or 0
+			 local i=(p.age+p.ctabv)/p.maxage
+			 i=mid(1,flr(1+i*#p.ctab),#p.ctab)
+			 p.c=p.ctab[i]
+			end
    p.draw(p)
   end
  end
@@ -158,7 +169,7 @@ function upd_game()
   })
   
   --★
-  if scroll-cursegs[1].o>=128 then
+  if #cursegs>2 and scroll-cursegs[1].o>=128 then
    deli(cursegs,1)
   end
  
@@ -182,8 +193,10 @@ function upd_game()
  
  lastdir=dir
  
- xscroll=mid(0,(px-10)/100,1)*-16
- 
+ --xscroll=mid(0,(px-10)/100,1)*-16
+ xscroll=mid(0,(px-10)/108,1)*-16
+ debug[2]=xscroll
+ debug[3]=px
  
  if shotwait>0 then
   shotwait-=1
@@ -233,6 +246,14 @@ function mspr(si,sx,sy)
  if ms[8] then
   mspr(ms[8],sx,sy)
  end
+end
+
+function split2d(s)
+ local arr=split(s,"|",false)
+ for k, v in pairs(arr) do
+  arr[k] = split(v)
+ end
+ return arr
 end
 -->8
 --gameplay
@@ -300,7 +321,6 @@ function explode(ex,ey)
   y=ey,
   r=17,
   maxage=2,
-  c=119,
   ctab={119,167} --★
  })
  
@@ -321,75 +341,64 @@ function explode(ex,ey)
        ) 
 end
 
+--1855
+
 function dopart(p)
- if p.wait then
-  -- wait countodwn
-  p.wait-=1
-  if p.wait<=0 then
-   p.wait=nil
-  end
- else
-  --particle code
-  p.age=p.age or 0
+ -- age and wait
+ p.age=p.age or 0
+ if p.age==0 then
+  p.ox=p.x
+  p.oy=p.y
+  p.r=p.r or 1
   p.spd=p.spd or 1
-  if p.age==0 then
-   p.ox=p.x
-   p.oy=p.y
-   p.r=p.r or 1
-   p.ctabv=p.ctabv or 0
-  end
-  p.age+=1
-  
-  --animate color
-  if p.ctab then
-   local i=(p.age+p.ctabv)/p.maxage
-   i=mid(1,flr(1+i*#p.ctab),#p.ctab)
-   p.c=p.ctab[i]
-  end
-  
-  --movement
+ end
+ p.age+=1
+ if p.age<=0 then return end
+ 
+ --particle code
+ 
+ --movement
+ if p.tox then
+  p.x+=(p.tox-p.x)/(4/p.spd)
+  p.y+=(p.toy-p.y)/(4/p.spd)   
+ end
+ if p.sx then
+  p.x+=p.sx
+  p.y+=p.sy
   if p.tox then
-   p.x+=(p.tox-p.x)/(4/p.spd)
-   p.y+=(p.toy-p.y)/(4/p.spd)   
-  end
-  if p.sx then
-   p.x+=p.sx
-   p.y+=p.sy
-   if p.tox then
-    p.tox+=p.sx
-    p.toy+=p.sy
-   end
-   
-   if p.drag then
-    p.sx*=p.drag
-    p.sy*=p.drag
-   end
+   p.tox+=p.sx
+   p.toy+=p.sy
   end
   
-  --size
-  if p.tor then
-   p.r+=(p.tor-p.r)/(5/p.spd)--★ spd
+  if p.drag then
+   p.sx*=p.drag
+   p.sy*=p.drag
   end
-  if p.sr then
-   p.r+=p.sr
+ end
+ 
+ --size
+ if p.tor then
+  p.r+=(p.tor-p.r)/(5/p.spd)--★ spd
+ end
+ if p.sr then
+  p.r+=p.sr
+ end
+ 
+ if p.age>=p.maxage or p.r<0.5 then
+  if p.onend=="return" then   
+   p.tox=p.ox
+   p.toy=p.oy
+   p.tor=nil
+   p.sr=-0.3
+  elseif p.onend=="fade" then
+   p.tor=nil
+   p.sr=-0.1-rnd(0.3)
+  else
+   del(parts,p)
   end
-  
-  if p.age>=p.maxage or p.r<0.5 then
-   if p.onend=="return" then   
-    p.tox=p.ox
-    p.toy=p.oy
-    p.tor=nil
-    p.sr=-0.3
-   elseif p.onend=="fade" then
-    p.tor=nil
-    p.sr=-0.1-rnd(0.3)
-   else
-    del(parts,p)
-   end
-   p.ctab=nil
-   p.onend=nil
-   p.maxage=32000
-  end
+  p.ctab=nil
+  p.onend=nil
+  p.maxage=32000
  end
 end
 
@@ -418,11 +427,10 @@ function grape(ex,ey,ewait,
 	  toy=ey+cos(myang)*dist,
 	  sx=0,
 	  sy=edrift,
-	  wait=ewait,
+	  age=-ewait,
 	  maxage=emaxage,
 	  onend=eonend,
 	  spd=espd,
-	  c=ectab[1],
 	  ctab=ectab,
 	  ctabv=rnd(5)
 	 })  
@@ -436,11 +444,10 @@ function grape(ex,ey,ewait,
   tor=7,
 	 sx=0,
 	 sy=edrift,
-  wait=ewait,
+  age=-ewait,
   maxage=emaxage,
   onend=eonend,
   spd=espd,
-  c=ectab[1],
   ctab=ectab
  })  
 end
@@ -455,12 +462,11 @@ function sparkblast(ex,ey,ewait)
 	  draw=spark,
 	  x=ex,
 	  y=ey,
-	  c=10,
 	  ctab={7,10},
 	  sx=sin(ang2)*spd,
 	  sy=cos(ang2)*spd,
 	  drag=0.8,
-	  wait=ewait,
+	  age=-ewait,
 	  maxage=rndrange(8,13)
 	 })
  end
@@ -643,14 +649,14 @@ bb3bb3b3111111111111111111111111bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb53bbbbbb53bbb
 11111111133133131331313b3311331331111111b131711b11111113b117131bbbbd3bb5bbbd3bbb42424242422552225d5ddd6dddddddddd5555555dddddddd
 111111113bb3bb3b3bb3b133b313b33b31331311bb31111111313313111113bbbbbd3335333d3bbb22222222242222425ddd5d6dddddddddd5555555dddddddd
 77771771bbbbbbbbbbbbb13bb31bbbbbbbbbbbbbbbb1311bbbbbbbbbb1131bbbbbbbbbbbbbbbbbbb24242424242222245d5d5d6dddddddddd5555555dddddddd
-b333333bbbbbbbbbbbbbbbbb3333333333333333bbbbbbbb11111111cccccccccccccccc1111111122222222222442225d5ddd7ccccccccc75555555cccccccc
-3b3bb3b3bbbbbbbbbbbbbbbb133333313b3bb3b3bbbbbbbb11111111cccccccccccccccc1111111122222222244444225ddd5655555555555555555555555555
-3bbbbbb3bbbbbbb11bbbbbbb131313113bbbbbb33bbbbbb311111111cccccccccccccccc1111111122222222244222225d5d65dddddddddddd555555dddddddd
-bbbbbbbbbbbbbb1331bbbbbb31111113bbbbbbbb33bbbb3311111111c777c7cccccccccc1111111111111111142222215d565d666666666666d55555666dd666
-3bbbbbb3bbbbb13bb31bbbbbb314413b3bbbbbb3b3bbbb3b11111111ccccccccc7c777cc11111111ccccccccc122221c5d65d66666666666666d555566d66d66
-b3bbbbbbbbbbb13b331bbbbbb3122133b3bbbbbbb3bbbb3311111111cccccccccccccccc11111111111111111cccccc1565d6666666666666666d55566d66d66
-3b33b3b3bbbbb133b31bbbbb3312213b3b33b3b3333bb33b11111111cccccccccccccccc11111111ccccccccc111111c55d666666666666666666d5566dddd66
-333b3b33bbbbb13bb31bbbbbb313313b333b3b33b333333b11111111cccccccccccccccc11111111111111111cccccc15d66666666666666666666d566666666
+b333333bbbbbbbbbbbbbbbbb3333333333333333bbbbbbbbcccccccccccccccccccccccc1111111122222222222442225d5ddd7ccccccccc75555555cccccccc
+3b3bb3b3bbbbbbbbbbbbbbbb133333313b3bb3b3bbbbbbbbcccccccccccccccccccccccc1111111122222222244444225ddd5655555555555555555555555555
+3bbbbbb3bbbbbbb11bbbbbbb131313113bbbbbb33bbbbbb3cccccccccccccccccccccccc1111111122222222244222225d5d65dddddddddddd555555dddddddd
+bbbbbbbbbbbbbb1331bbbbbb31111113bbbbbbbb33bbbb33ccccccccc777c7cccccccccc1111111111111111142222215d565d666666666666d55555666dd666
+3bbbbbb3bbbbb13bb31bbbbbb314413b3bbbbbb3b3bbbb3bccccccccccccccccc7c777cc11111111ccccccccc122221c5d65d66666666666666d555566d66d66
+b3bbbbbbbbbbb13b331bbbbbb3122133b3bbbbbbb3bbbb33cccccccccccccccccccccccc11111111111111111cccccc1565d6666666666666666d55566d66d66
+3b33b3b3bbbbb133b31bbbbb3312213b3b33b3b3333bb33bcccccccccccccccccccccccc11111111ccccccccc111111c55d666666666666666666d5566dddd66
+333b3b33bbbbb13bb31bbbbbb313313b333b3b33b333333bcccccccccccccccccccccccc11111111111111111cccccc15d66666666666666666666d566666666
 33333333bbbbb133331bbbbb33133133333333333333333333333333333333332222222211111111b3b3bbbb11122211b5666666666666666666665b66666666
 13333331bbbbbb1331bbbbbb313333131333333113333331133333313333333322222222111111113333b3b311242211b5666666666666666666665b66dddd66
 13131311bbbbbbb11bbbbbbb1333333113131311131313111313131133333333222222221111111135553333c242222cb5666666666666666666665b66d66d66

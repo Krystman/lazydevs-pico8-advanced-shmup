@@ -101,11 +101,17 @@ I want to have a ship that flies around, scrolling background and simple shootin
    Done: Make a level
    Done: Make a compact tileset
 
-SECOND GOAL: Figure out the gameplay
+SECOND GOAL: Have some basic gameplay. Arrive at the "Great Wall"
 I want 
- - Moving Enemies
- - Enemy Bullets
- - Collisions
- - How do we conserve Sprite Space
- - Arrive at the "Great Wall"
-  
+ - to spawn an enemy
+ - the enemy to move somehow
+ - the enemy to shoot a bullet
+ - to be able to hit the enemy
+ - the enemy to explode
+ - to die if I get hit by bullet
+
+ - How do we conserve Sprite Space?
+ - - How do we compress 2D Arrays?
+ - - We need a tool to create mysprites
+ - - How do we deal with animations?
+
