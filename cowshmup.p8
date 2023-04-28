@@ -13,7 +13,9 @@ __lua__
 -- - how do we deal with animations?
 
 -- todo
-
+-- col ship vs enemies
+-- col buls vs ship
+-- col shot vs enemies
 
 -- takeaways
 -- - xscroll big pita
@@ -22,6 +24,7 @@ __lua__
 -- - - highly senstive numbers
 -- - - need immediate feedback
 -- - - need and efficient way to define
+-- - maybe our ship needs to be an object?
 
 function _init()
  t=0
@@ -76,6 +79,8 @@ end
 function startgame()
  px,py=64,64
  spd=1.4
+ spd=0.1
+ 
  lastdir=0
  shipspr=0
 
@@ -92,9 +97,13 @@ function startgame()
  muzz={}
  enemies={}
  buls={}
+ 
+ pcol=false
 
  _upd=upd_game
  _drw=drw_game
+ 
+ spawnen()
 end
 
 function _draw()
@@ -117,9 +126,9 @@ end
 --draw
 
 function drw_game()
-
+ camera(-xscroll,0)
  for seg in all(cursegs) do
-  map(seg.x,seg.y,xscroll,scroll-seg.o,18,8)
+  map(seg.x,seg.y,0,scroll-seg.o,18,8)
  end
  
  for p in all(parts) do
@@ -136,29 +145,40 @@ function drw_game()
  end
   
  for e in all(enemies) do
-  mspr(e.sani[flr(e.si)],e.x+xscroll,e.y)
-  pset(e.x+xscroll,e.y,8)
+  mspr(e.sani[flr(e.si)],e.x,e.y)
+  pset(e.x,e.y,8)
+  rect(e.x-7,e.y-7,e.x+8,e.y+8,e.iscol and 8 or 7) 
+
  end
  
  for s in all(shots) do    
-  mspr(s.sani[flr(s.si)],s.x+xscroll,s.y)
+  mspr(s.sani[flr(s.si)],s.x,s.y)
  end
+ 
+ camera(0,0)
  
  for m in all(muzz) do    
   mspr(m.sani[flr(m.si)],px+m.x,py+m.y)
  end
  
+ 
  --ship
  mspr(shiparr[flr(shipspr*2.4+3.5)],px,py)
  pset(px,py,8)
+ 
+ rect(px-7,py-7,px+8,py+8,pcol and 8 or 7) 
  
  local fframe=flamearr[t\3%4+1]
  mspr(fframe,px-1,py+8)
  mspr(fframe,px+2,py+8)
  
+ camera(-xscroll,0)
+ 
  for s in all(buls) do    
-  mspr(s.sani[flr(s.si)],s.x+xscroll,s.y)
+  mspr(s.sani[flr(s.si)],s.x,s.y)
  end
+ 
+ camera(0,0)
  
  debug[1]=scroll
  debug[2]=#enemies
@@ -237,13 +257,45 @@ function upd_game()
  boss=btn(🅾️)
  
  if t%60==0 then
-  spawnen()
+  --spawnen()
  end
  
  dobuls(shots)
  dobuls(buls)
  domuzz()
  doenemies()
+ 
+ pcol=false
+ -- shots vs enemies
+ for e in all(enemies) do
+  e.iscol=false 
+ end
+ for e in all(enemies) do
+  for s in all(shots) do
+   if col(flr(xscroll+s.x-3),flr(s.y),8,16,
+          flr(xscroll+e.x-6),flr(e.y-6),16,16) then
+    e.iscol=true      
+   end
+  end
+ end  
+ -- ship vs enemies
+ for e in all(enemies) do
+  if col(flr(px-7),flr(py-7),16,16,
+         flr(xscroll+e.x-6),flr(e.y-6),16,16) then
+   pcol=true      
+  end
+ end
+ 
+ -- ship vs bullets
+ for b in all(buls) do
+  if col(flr(px-7),flr(py-7),16,16,
+         flr(xscroll+b.x-2),flr(b.y-3),7,7) then
+   pcol=true      
+  end
+ end
+ 
+ 
+ 
  for p in all(parts) do
   dopart(p)
  end
@@ -285,20 +337,52 @@ function split2d(s)
  end
  return arr
 end
+
+function col(x1,y1,w1,h1,x2,y2,w2,h2)
+ local a_left=x1
+ local a_top=y1
+ local a_right=x1+w1-1
+ local a_bottom=y1+h1-1
+ 
+ local b_left=x2
+ local b_top=y2
+ local b_right=x2+w2-1
+ local b_bottom=y2+h2-1
+
+ if a_top>b_bottom then return false end
+ if b_top>a_bottom then return false end
+ if a_left>b_right then return false end
+ if b_left>a_right then return false end
+ 
+ return true
+end
 -->8
 --gameplay
 
 function spawnen()
- add(enemies,{
-  x=10+rnd(128),
-  y=-16-rnd(32),
-  sani={18,19,20},
-  si=1,
-  sx=0,
-  sy=0,
-  brain=1,
-  age=0
- })
+ --[[
+ for i=1,5 do
+	 add(enemies,{
+	  x=i*32,--10+rnd(128),
+	  y=0+i*32,--16-rnd(32),
+	  sani={18,19,20},
+	  si=1,
+	  sx=0,
+	  sy=0,
+	  brain=2,
+	  age=0,
+	  iscol=false
+	 })
+ end
+ ]]
+ add(buls,{
+		x=90,
+		y=64,
+		sx=0,
+		sy=0,
+		sani={22},
+		si=1
+	})
 end
 
 function doenemies()
