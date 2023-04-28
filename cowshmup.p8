@@ -19,6 +19,9 @@ __lua__
 -- - xscroll big pita
 -- - enemy scrolling in sync with bg
 -- - how enemy behavior?
+-- - - highly senstive numbers
+-- - - need immediate feedback
+-- - - need and efficient way to define
 
 function _init()
  t=0
@@ -47,7 +50,8 @@ function _init()
   {0,63,8,17,7,7,2,21}, --18 ufo 1
   {8,63,18,17,8,7,}, --19 ufo 2
   {26,63,9,17,8,7,2,21}, --20 ufo 3
-  {17,66,2,3,-1,4} --21 ufo fix
+  {17,66,2,3,-1,4}, --21 ufo fix
+  {73,0,7,7,3,3} --22 enemy bullet
 
  }
  
@@ -87,15 +91,7 @@ function startgame()
  shotwait=0
  muzz={}
  enemies={}
- 
- add(enemies,{
-  x=74,
-  y=16,
-  sani={18,19,20},
-  si=1,
-  sx=0.1,
-  sy=0.2
- })
+ buls={}
 
  _upd=upd_game
  _drw=drw_game
@@ -145,7 +141,7 @@ function drw_game()
  end
  
  for s in all(shots) do    
-  mspr(s.sani[flr(s.si)],s.x,s.y)
+  mspr(s.sani[flr(s.si)],s.x+xscroll,s.y)
  end
  
  for m in all(muzz) do    
@@ -160,7 +156,13 @@ function drw_game()
  mspr(fframe,px-1,py+8)
  mspr(fframe,px+2,py+8)
  
+ for s in all(buls) do    
+  mspr(s.sani[flr(s.si)],s.x+xscroll,s.y)
+ end
+ 
  debug[1]=scroll
+ debug[2]=#enemies
+ debug[3]=#buls
 end
 
 function drw_menu()
@@ -219,8 +221,6 @@ function upd_game()
  
  --xscroll=mid(0,(px-10)/100,1)*-16
  xscroll=mid(0,(px-10)/108,1)*-16
- debug[2]=xscroll
- debug[3]=px
  
  if shotwait>0 then
   shotwait-=1
@@ -236,7 +236,12 @@ function upd_game()
  
  boss=btn(🅾️)
  
- doshots()
+ if t%60==0 then
+  spawnen()
+ end
+ 
+ dobuls(shots)
+ dobuls(buls)
  domuzz()
  doenemies()
  for p in all(parts) do
@@ -283,21 +288,65 @@ end
 -->8
 --gameplay
 
+function spawnen()
+ add(enemies,{
+  x=10+rnd(128),
+  y=-16-rnd(32),
+  sani={18,19,20},
+  si=1,
+  sx=0,
+  sy=0,
+  brain=1,
+  age=0
+ })
+end
+
 function doenemies()
  for e in all(enemies) do
+  
+  if e.brain==1 then
+   -- flyin and out brain
+   if e.age<15 then
+    -- fly down
+    e.sy=2
+   elseif e.age<120 then
+    if e.age==60 then
+     add(buls,{
+  				x=e.x,
+  				y=e.y,
+  				sx=0,
+  				sy=2,
+  				sani={22},
+  				si=1
+ 				})
+    end
+    -- stay
+    e.sy=max(0,e.sy-0.03)
+    --e.sy=0
+   else
+    -- fly up
+    e.sy-=0.04
+    if e.y < -16 then
+     del(enemies,e)
+    end
+   end
+  end
+  
   e.x+=e.sx
   e.y+=e.sy
-  e.si+=0.1
+  
+  e.si+=0.15
+  e.age+=1
   
   if flr(e.si)>#e.sani then
    e.si=1
   end
-   
+  
  end
 end
 
-function doshots()
- for s in all(shots) do
+function dobuls(arr)
+ for s in all(arr) do
   s.x+=s.sx
   s.y+=s.sy
   s.si+=0.5
@@ -306,8 +355,8 @@ function doshots()
    s.si=1
   end
   
-  if s.y<-16 then
-   del(shots,s)
+  if s.y<-16 or s.y>130 then
+   del(arr,s)
   end
  end
 end
@@ -318,7 +367,7 @@ function shoot()
  shotwait=3
  
  add(shots,{
-  x=px-4,
+  x=px-4-xscroll,
   y=py-14,
   sx=0,
   sy=shotspd,
@@ -326,7 +375,7 @@ function shoot()
   si=(t\2)%3+1,
  })
  add(shots,{
-  x=px+4,
+  x=px+4-xscroll,
   y=py-14,
   sx=0,
   sy=shotspd,
@@ -575,13 +624,13 @@ function spark(p)
  
 end
 __gfx__
-000000cc0000000000000cc00000000000000c00090090900007000007000700000007000000000000000000000000000000000000000000000000000e070070
-00000c11c00000000000c11c000000000000c100090090900777000007000700000000000000000000000000000000000000000000000000000000000e777777
-0000c1671c000000000c1671c0000000000c1600970090907777000007000000000000000000000000000000000000000000000000000000000000000e7c7777
-0000c111d1c00000000c111d1c00000000c111009709a0907777007007000000700000000000000000000000000000000000000000000000000000000e7c77c7
-000c1ccc11c0000000c1ccc11c00000000c1cc09770970977777077077000000700000000000000000000000000000000000000000000000000000000e0707c7
-00c1c77cc11c00000c1c77cc11c000000c1c7709770979a77777077077700000770000000000000000000000000000000000000000000000000000000e000070
-00c1c7c1c11c00000c1c7c1c11c00000cc1c7c97a79a79777777007777070007700000000000000000000000000000000000000000000000000000000e070070
+000000cc0000000000000cc00000000000000c0009009090000700000700070000000700000fff0000000000000000000000000000000000000000000e070070
+00000c11c00000000000c11c000000000000c1000900909007770000070007000000000000f888f000000000000000000000000000000000000000000e777777
+0000c1671c000000000c1671c0000000000c1600970090907777000007000000000000000f88e88f00000000000000000000000000000000000000000e7c7777
+0000c111d1c00000000c111d1c00000000c111009709a0907777007007000000700000000f8efe8f00000000000000000000000000000000000000000e7c77c7
+000c1ccc11c0000000c1ccc11c00000000c1cc09770970977777077077000000700000000f88e88f00000000000000000000000000000000000000000e0707c7
+00c1c77cc11c00000c1c77cc11c000000c1c7709770979a777770770777000007700000000f888f000000000000000000000000000000000000000000e000070
+00c1c7c1c11c00000c1c7c1c11c00000cc1c7c97a79a7977777700777707000770000000000fff0000000000000000000000000000000000000000000e070070
 00c1c111c111c000c11c111c111c000c111c1197a79a79707777707777000077700000000000000000000000000000000000000000000000000000000eeee070
 00c1c111c171c000c11c111c171c000c171c119aa79a79a00777777777000077700000000000000000000000000000000000000000000000000000000eeee777
 0c11cc171161c00c161cc117161c000c1611719aa799a9a00077077777070077707000007000000000000000000000000000000000000000000000000eeee7c7
