@@ -66,7 +66,7 @@ function blob(p)
   deli(thk,2)
   pat={0b1111111111111111,0}
  elseif myr<=8 then  
-  deli(thk,3 and myr<=6 or 4)
+  deli(thk,myr<=6 and 3 or 4)
   deli(pat,3)
   pat[2]=0b1010101010101010
  end

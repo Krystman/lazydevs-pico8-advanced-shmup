@@ -95,7 +95,17 @@ I want to have a ship that flies around, scrolling background and simple shootin
    Done: Make a juicy procedural explosion
 
 5. Building the Level
-   Task: Make a level
-   Task: Makle a compact tileset
-   Task: [secret tech 1]
-   Task: [secret tech 2]
+   Done: Add the plance
+   Done: Sideways Scroll
+   Done: Boss Mode Repetition
+   Done: Make a level
+   Done: Make a compact tileset
+
+SECOND GOAL: Figure out the gameplay
+I want 
+ - Moving Enemies
+ - Enemy Bullets
+ - Collisions
+ - How do we conserve Sprite Space
+ - Arrive at the "Great Wall"
+  
