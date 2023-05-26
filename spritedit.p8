@@ -2,11 +2,13 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 function _init()
+
  --- customize here ---
  #include shmup_myspr.txt
  file="shmup_myspr.txt"
  arrname="myspr"
  data=myspr
+ reload(0x0,0x0,0x2000,"cowshmup.p8")
  ----------------------
  
  debug={}
@@ -17,7 +19,6 @@ function _init()
  
  menuitem(1,"export",export)
  
- reload(0x0,0x0,0x2000,"cowshmup.p8")
  
  curx=1
  cury=1
@@ -67,6 +68,7 @@ end
 -->8
 --draw
 function draw_edit()
+ -- background
  fillp(0b11001100001100111100110000110011)
  rectfill(0,0,127,127,33)
  fillp(▒)
@@ -76,10 +78,12 @@ function draw_edit()
  
  draw_menu()
  
+ -- draw sprite
  if selspr then
   mspr(selspr,63,63)
  end
  
+ -- blinking dot
  if (time()*2)%1<0.5 then
   pset(63,63,rnd({8,13,7,15}))
  end
@@ -94,12 +98,7 @@ function draw_list()
  fillp()
    
  draw_menu()
- 
- local mymnu=menu[cury][curx]
- if mymnu.cmdy then
-  mspr(mymnu.cmdy,63,63)
- end
- 
+  
  if (time()*2)%1<0.5 then
   pset(63,63,rnd({8,13,7,15}))
  end
@@ -155,6 +154,51 @@ end
 --update
 function update_edit()
  refresh_edit()
+ 
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=(cury-1)%#menu+1
+ cury-=mscroll
+ cury=mid(1,cury,#menu)
+ 
+ if cury==1 then
+  curx=1
+  if btnp(⬅️) then
+   selspr-=1
+  elseif btnp(➡️) then
+   selspr+=1
+  end
+  selspr=mid(1,selspr,#data)	
+ else
+  curx=2
+ end
+ 
+ if btnp(🅾️) then
+  _drw=draw_list
+  _upd=update_list
+  refresh_list()
+  cury=selspr
+  curx=1
+  return
+ end
+ 
+ if btnp(❎) then
+  local mymnu=menu[cury][curx]
+  if mymnu.cmd=="editval" then
+   _upd=upd_type
+ 	 local s=tostr(data[mymnu.cmdy][mymnu.cmdx])
+   if s==nil then
+    s=""
+   end
+   typetxt=s
+   typecur=#typetxt+1
+   typecall=enter_edit
+  end
+ end
 end
 
 function update_list()
@@ -196,6 +240,8 @@ function update_list()
    selspr=mymnu.cmdy
    _upd=update_edit
    _drw=draw_edit
+   refresh_edit()
+   cury=1
   end
  end
 end
@@ -247,6 +293,7 @@ function update_table()
    _upd=upd_type
    typetxt=tostr(mymnu.txt)
    typecur=#typetxt+1
+   typecall=enter_table
   elseif mymnu.cmd=="newline" then
    add(data,{0})  
   elseif mymnu.cmd=="newcell" then
@@ -258,25 +305,9 @@ end
 function upd_type()
  if key then
   if key=="\r" then
-   -- enter
-   local mymnu=menu[cury][curx]
+   -- enter   
    poke(0x5f30,1)
-   local typeval=tonum(typetxt)
-   if typeval==nil then
-    if mymnu.cmdx==#data[mymnu.cmdy] and typetxt=="" then
-     --delete cell
-     deli(data[mymnu.cmdy],mymnu.cmdx)
-     if mymnu.cmdx==1 then
-      deli(data,mymnu.cmdy)
-     end
-     _upd=update_table
-     return
-    end  
-    typeval=0
-   end
-   
-   data[mymnu.cmdy][mymnu.cmdx]=typeval
-   _upd=update_table
+   typecall()
    return
   elseif key=="\b" then
    --backspace
@@ -336,6 +367,14 @@ function mspr(si,sx,sy)
   mspr(ms[8],sx,sy)
  end
 end
+
+function spacejam(n)
+ local ret=""
+ for i=1,n do
+  ret..=" "
+ end
+ return ret
+end
 -->8
 --i/o
 function export()
@@ -362,6 +401,42 @@ end
 --ui
 function refresh_edit()
  menu={}
+ 
+ add(menu,{{
+	 txt="< sprite "..selspr.." >",
+	 w="",
+	 cmd="sprhead",
+	 x=2,
+	 y=2
+ }})
+ 
+ local lab={"  x:","  y:","wid:","hgt:"," ox:"," oy:"," fx:","nxt:"}
+ 
+	for i=1,8 do
+	 local s=tostr(data[selspr][i])
+	 
+	 if s==nil then
+	  s="[nil]"
+	 end
+	
+		add(menu,{
+			{
+			 txt=lab[i],
+			 w="    ",
+			 x=2,
+			 y=3+i*7
+			},{
+			 txt=s,
+			 w=spacejam(#s),
+			 cmd="editval",
+			 cmdy=selspr,
+			 cmdx=i,
+			 x=2+16,
+			 y=3+i*7
+			}
+		}) 
+ end
+ 
 end
 
 function refresh_list()
@@ -440,6 +515,40 @@ function refresh_table()
  }})
 end
 
+function enter_table()
+  
+ local mymnu=menu[cury][curx]
+ local typeval=tonum(typetxt)
+ if typeval==nil then
+  if mymnu.cmdx==#data[mymnu.cmdy] and typetxt=="" then
+   --delete cell
+   deli(data[mymnu.cmdy],mymnu.cmdx)
+   if mymnu.cmdx==1 then
+    deli(data,mymnu.cmdy)
+   end
+   _upd=update_table
+   return
+  end  
+  typeval=0
+ end
+ 
+ data[mymnu.cmdy][mymnu.cmdx]=typeval
+ _upd=update_table
+ refresh_table()
+end
+
+function enter_edit()
+
+ local mymnu=menu[cury][curx]
+ local typeval=tonum(typetxt)
+ if typeval==nil then
+  typeval=0
+ end
+ 
+ data[mymnu.cmdy][mymnu.cmdx]=typeval
+ _upd=update_edit
+ refresh_edit()
+end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
