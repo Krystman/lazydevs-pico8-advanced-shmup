@@ -1,10 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---show cursor
---move the cursor
---backspace
-
 function _init()
  --- customize here ---
  #include shmup_myspr.txt
@@ -16,8 +12,8 @@ function _init()
  debug={}
  msg={}
  
- _drw=draw_table
- _upd=update_table
+ _drw=draw_list
+ _upd=update_list
  
  menuitem(1,"export",export)
  
@@ -70,9 +66,52 @@ function dokeys()
 end
 -->8
 --draw
+function draw_edit()
+ fillp(0b11001100001100111100110000110011)
+ rectfill(0,0,127,127,33)
+ fillp(▒)
+ line(63,0,63,127,13)
+ line(0,63,127,63,13)
+ fillp()
+ 
+ draw_menu()
+ 
+ if selspr then
+  mspr(selspr,63,63)
+ end
+ 
+ if (time()*2)%1<0.5 then
+  pset(63,63,rnd({8,13,7,15}))
+ end
+end
+
+function draw_list()
+ fillp(0b11001100001100111100110000110011)
+ rectfill(0,0,127,127,33)
+ fillp(▒)
+ line(63,0,63,127,13)
+ line(0,63,127,63,13)
+ fillp()
+   
+ draw_menu()
+ 
+ local mymnu=menu[cury][curx]
+ if mymnu.cmdy then
+  mspr(mymnu.cmdy,63,63)
+ end
+ 
+ if (time()*2)%1<0.5 then
+  pset(63,63,rnd({8,13,7,15}))
+ end
+end
 
 function draw_table()
  cls(2)
+ draw_menu()
+end
+
+function draw_menu()
+ 
  --spr(0,0,0,16,16)
  
 	if menu then
@@ -109,65 +148,57 @@ function draw_table()
 		bgprint(txt,mymnu.x+scrollx,mymnu.y+scrolly,7)
  end
  
- --[[
- for i=1,#data do
-  for j=1,#data[i] do
-   bgprint(data[i][j],2+18*j,2+8*i,7)
-  end
- end
- ]]
 end
 
-function refresh_table()
- menu={}
- for i=1,#data do
-  local lne={}
-  local linemax=#data[i]
-  if i==cury then
-   linemax+=1  
-  end
-  add(lne,{
-	  txt=i,
-	  w="   ",
-	  cmd="",
-	  x=4,
-	  y=-4+8*i,
-	  c=2  
-  })
-  for j=1,linemax do
-   if j==#data[i]+1 then
-			 add(lne,{
-			  txt="+",
-			  w=" ",
-			  cmd="newcell",
-			  cmdy=i,
-			  x=-10+14*(j+1),
-			  y=-4+8*i, 
-			 })
-		 else
-		  add(lne,{
-		   txt=data[i][j],
-		   cmd="edit",
-		   cmdx=j,
-		   cmdy=i,
-		   x=-10+14*(j+1),
-		   y=-4+8*i,
-		   w="   "
-		  })
-   end
-  end
-  add(menu,lne)
- end
- add(menu,{{
-  txt=" + ",
-  w="   ",
-  cmd="newline",
-  x=4,
-  y=-4+8*(#data+1), 
- }})
-end
+
 -->8
 --update
+function update_edit()
+ refresh_edit()
+end
+
+function update_list()
+ refresh_list()
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=(cury-1)%#menu+1
+ cury-=mscroll
+ cury=mid(1,cury,#menu)
+ 
+ curx=1
+ 
+ local mymnu=menu[cury][curx]
+ if mymnu.y+scrolly>110 then
+  scrolly-=4
+ end
+ if mymnu.y+scrolly<10 then
+  scrolly+=4
+ end
+ scrolly=min(0,scrolly)
+ 
+ if mymnu.x+scrollx>110 then
+  scrollx-=2
+ end
+ if mymnu.x+scrollx<20 then
+  scrollx+=2
+ end
+ scrollx=min(0,scrollx)
+ 
+ if btnp(❎) then
+  local mymnu=menu[cury][curx]
+  if mymnu.cmd=="newline" then
+   add(data,{0,0,0,0,0,0})
+  elseif mymnu.cmd=="editspr" then
+   selspr=mymnu.cmdy
+   _upd=update_edit
+   _drw=draw_edit
+  end
+ end
+end
 
 function update_table()
  refresh_table()
@@ -293,6 +324,18 @@ function split2d(s)
  end
  return arr
 end
+
+function mspr(si,sx,sy)
+ local ms=myspr[si]
+ sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5],sy-ms[6],ms[3],ms[4],ms[7]==1)
+ if ms[7]==2 then
+  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5]+ms[3],sy-ms[6],ms[3],ms[4],true)
+ end
+ 
+ if ms[8] then
+  mspr(ms[8],sx,sy)
+ end
+end
 -->8
 --i/o
 function export()
@@ -315,6 +358,88 @@ function export()
  add(msg,{txt="exported!",t=120})
  --debug[1]="exported!"
 end
+-->8
+--ui
+function refresh_edit()
+ menu={}
+end
+
+function refresh_list()
+ menu={}
+ for i=1,#data do
+  local lne={}
+  local linemax=#data[i]
+  if i==cury then
+   linemax+=1  
+  end
+  add(lne,{
+	  txt="spr "..i,
+	  w="",
+	  cmd="editspr",
+	  cmdy=i,
+	  x=2,
+	  y=-4+6*i
+  })
+  add(menu,lne)
+ end
+ add(menu,{{
+  txt=" + ",
+  w="   ",
+  cmd="newline",
+  x=2,
+  y=-4+6*(#data+1)+2, 
+ }})
+end
+
+function refresh_table()
+ menu={}
+ for i=1,#data do
+  local lne={}
+  local linemax=#data[i]
+  if i==cury then
+   linemax+=1  
+  end
+  add(lne,{
+	  txt=i,
+	  w="   ",
+	  cmd="",
+	  x=4,
+	  y=-4+8*i,
+	  c=2  
+  })
+  for j=1,linemax do
+   if j==#data[i]+1 then
+			 add(lne,{
+			  txt="+",
+			  w=" ",
+			  cmd="newcell",
+			  cmdy=i,
+			  x=-10+14*(j+1),
+			  y=-4+8*i, 
+			 })
+		 else
+		  add(lne,{
+		   txt=data[i][j],
+		   cmd="edit",
+		   cmdx=j,
+		   cmdy=i,
+		   x=-10+14*(j+1),
+		   y=-4+8*i,
+		   w="   "
+		  })
+   end
+  end
+  add(menu,lne)
+ end
+ add(menu,{{
+  txt=" + ",
+  w="   ",
+  cmd="newline",
+  x=4,
+  y=-4+8*(#data+1), 
+ }})
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
