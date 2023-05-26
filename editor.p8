@@ -1,7 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
-
+--show cursor
+--move the cursor
+--backspace
 
 function _init()
  --- customize here ---
@@ -24,7 +26,7 @@ function _init()
  scrollx=0
  
  poke(0x5f2d, 1)
- debug[2]=""
+
 end
 
 function _draw()
@@ -39,12 +41,20 @@ function _draw()
 end
 
 function _update60()
- debug[1]=stat(30)
+ dokeys()
+ _upd()
+end
+
+function dokeys()
  if stat(30) then
-  debug[2]..=stat(31)
+  key=stat(31)
+  if key=="p" then
+   poke(0x5f30,1)
+  end
+ else
+  key=nil
  end
  
- _upd()
 end
 -->8
 --draw
@@ -59,6 +69,9 @@ function draw_table()
 		  local c=13
 		  if i==cury and j==curx then
 		   c=7
+		   if _upd==upd_type then
+		    c=0
+		   end
 		  end
 		  local mymnu=menu[i][j]
 		  bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y+scrolly,13)   
@@ -66,6 +79,23 @@ function draw_table()
 		 end
 		end
  end
+ 
+ if _upd==upd_type then
+  local mymnu=menu[cury][curx]
+  
+  local txt_bef=sub(typetxt,1,typecur-1)
+  local txt_cur=sub(typetxt,typecur,typecur)
+  local txt_aft=sub(typetxt,typecur+1)
+  txt_cur=txt_cur=="" and " " or txt_cur 
+  
+  if (time()*2)%1<0.5 then
+   txt_cur="\^i"..txt_cur.."\^-i"
+  end
+   
+  local txt=txt_bef..txt_cur..txt_aft
+		bgprint(txt,mymnu.x+scrollx,mymnu.y+scrolly,7)
+ end
+ 
  --[[
  for i=1,#data do
   for j=1,#data[i] do
@@ -145,15 +175,57 @@ function update_table()
  if btnp(❎) then
   local mymnu=menu[cury][curx]
   if mymnu.cmd=="edit" then
-   data[mymnu.cmdy][mymnu.cmdx]+=1
+   _upd=upd_type
+   typetxt=tostr(mymnu.txt)
+   typecur=#typetxt+1
   end
  end
- if btnp(🅾️) then
-  local mymnu=menu[cury][curx]
-  if mymnu.cmd=="edit" then
-   data[mymnu.cmdy][mymnu.cmdx]-=1
+end
+
+function upd_type()
+ if key then
+  if key=="\r" then
+   -- enter
+   local mymnu=menu[cury][curx]
+   poke(0x5f30,1)
+   typetxt=tonum(typetxt)
+   if typetxt==nil then
+    typetxt=0
+   end
+   data[mymnu.cmdy][mymnu.cmdx]=typetxt
+   _upd=update_table
+   return
+  elseif key=="\b" then
+   --backspace
+   if typecur>1 then
+    if typecur>#typetxt then
+	    typetxt=sub(typetxt,1,#typetxt-1)
+	   else
+			  local txt_bef=sub(typetxt,1,typecur-2)
+			  local txt_aft=sub(typetxt,typecur)
+			  typetxt=txt_bef..txt_aft
+	   end
+	   typecur-=1
+   end
+  else
+   if typecur>#typetxt then
+    typetxt..=key
+   else
+		  local txt_bef=sub(typetxt,1,typecur-1)
+		  local txt_aft=sub(typetxt,typecur)
+		  typetxt=txt_bef..key..txt_aft
+   end
+   typecur+=1
   end
  end
+ 
+ if btnp(⬅️) then
+  typecur-=1
+ end
+ if btnp(➡️) then
+  typecur+=1
+ end
+ typecur=mid(1,typecur,#typetxt+1)
 end
 -->8
 --tools
