@@ -80,7 +80,7 @@ function draw_edit()
  
  -- draw sprite
  if selspr then
-  mspr(selspr,63,63)
+  wrapmspr(selspr,63,63)
  end
  
  -- blinking dot
@@ -98,7 +98,13 @@ function draw_list()
  fillp()
    
  draw_menu()
-  
+ 
+ -- draw sprite
+ local mymnu=menu[cury][curx]
+ if mymnu then
+  wrapmspr(mymnu.cmdy,63,63)
+ end
+ 
  if (time()*2)%1<0.5 then
   pset(63,63,rnd({8,13,7,15}))
  end
@@ -173,6 +179,8 @@ function update_edit()
    selspr+=1
   end
   selspr=mid(1,selspr,#data)	
+ elseif cury==10 then
+  curx=1
  else
   curx=2
  end
@@ -183,6 +191,8 @@ function update_edit()
   refresh_list()
   cury=selspr
   curx=1
+  scrolly=0
+  scrollx=0
   return
  end
  
@@ -191,12 +201,26 @@ function update_edit()
   if mymnu.cmd=="editval" then
    _upd=upd_type
  	 local s=tostr(data[mymnu.cmdy][mymnu.cmdx])
-   if s==nil then
+   if s=="[nil]" or s==nil then
     s=""
    end
    typetxt=s
    typecur=#typetxt+1
    typecall=enter_edit
+  elseif mymnu.cmd=="delspr" then
+			deli(data,selspr)
+			selspr-=1
+			if selspr==0 then
+			 selspr=1
+			end
+			_drw=draw_list
+			_upd=update_list
+			refresh_list()
+			cury=selspr
+			curx=1
+			scrolly=0
+			scrollx=0
+			return   
   end
  end
 end
@@ -240,6 +264,8 @@ function update_list()
    selspr=mymnu.cmdy
    _upd=update_edit
    _drw=draw_edit
+   scrolly=0
+   scrollx=0
    refresh_edit()
    cury=1
   end
@@ -356,6 +382,50 @@ function split2d(s)
  return arr
 end
 
+function wrapmspr(si,sx,sy)
+ if si==nil then
+  bgprint("[nil]",sx-5*2+1,sy-2,14)
+  return
+ end
+ if myspr[si]==nil then
+  bgprint("["..si.."]",sx-5*2+1,sy-2,14)
+  return
+ end
+ 
+ local ms=myspr[si]
+ 
+ if ms[8] then
+  --check for loops
+  if ms[8]==si then
+   bgprint("[loop]",sx-6*2+1,sy-2,14)
+   return
+  else
+   if checkloop(ms,10) then
+    bgprint("[loop]",sx-6*2+1,sy-2,14)
+    return   
+   end
+  end
+ end
+ mspr(si,sx,sy)
+end
+
+function checkloop(ms,depth)
+ depth-=1
+ if depth<=0 then
+  return true
+ end
+ 
+ if ms==nil then
+  return true
+ end
+ 
+ if ms[8] then
+  return checkloop(myspr[ms[8]],depth)
+ else
+  return false
+ end
+end
+
 function mspr(si,sx,sy)
  local ms=myspr[si]
  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5],sy-ms[6],ms[3],ms[4],ms[7]==1)
@@ -437,6 +507,13 @@ function refresh_edit()
 		}) 
  end
  
+ add(menu,{{
+	 txt="delete",
+	 w="",
+	 cmd="delspr",
+	 x=2,
+	 y=4+9*7
+ }})
 end
 
 function refresh_list()
@@ -541,11 +618,25 @@ function enter_edit()
 
  local mymnu=menu[cury][curx]
  local typeval=tonum(typetxt)
- if typeval==nil then
-  typeval=0
- end
  
- data[mymnu.cmdy][mymnu.cmdx]=typeval
+ if mymnu.cmdx==8 then
+  if typeval!=nil then
+   if data[mymnu.cmdy][7]==nil then
+    data[mymnu.cmdy][7]=0
+   end
+  end
+ end
+
+ if typeval==nil then
+  if mymnu.cmdx>=7 and mymnu.cmdx==#data[mymnu.cmdy] then
+   deli(data[mymnu.cmdy],mymnu.cmdx)
+  else
+   data[mymnu.cmdy][mymnu.cmdx]=0
+  end
+ else
+  data[mymnu.cmdy][mymnu.cmdx]=typeval
+ end 
+
  _upd=update_edit
  refresh_edit()
 end
