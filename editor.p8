@@ -26,7 +26,6 @@ function _init()
  scrollx=0
  
  poke(0x5f2d, 1)
-
 end
 
 function _draw()
@@ -66,14 +65,15 @@ function draw_table()
 	if menu then
 		for i=1,#menu do
 		 for j=1,#menu[i] do
-		  local c=13
+		  local mymnu=menu[i][j]
+		  local c=mymnu.c or 13
 		  if i==cury and j==curx then
 		   c=7
 		   if _upd==upd_type then
 		    c=0
 		   end
 		  end
-		  local mymnu=menu[i][j]
+		  
 		  bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y+scrolly,13)   
 		  bgprint(mymnu.txt,mymnu.x+scrollx,mymnu.y+scrolly,c) 
 		 end
@@ -106,32 +106,52 @@ function draw_table()
 end
 
 function refresh_table()
- --[[menu={
-  {
-   {
-    txt="hello",
-    cmd="say hello",
-    x=2,
-    y=2
-   }
-  }
- }]]--
  menu={}
  for i=1,#data do
   local lne={}
-  for j=1,#data[i] do
-   add(lne,{
-    txt=data[i][j],
-    cmd="edit",
-    cmdx=j,
-    cmdy=i,
-    x=-10+14*j,
-    y=-4+8*i,
-    w="   "
-   })
+  local linemax=#data[i]
+  if i==cury then
+   linemax+=1  
+  end
+  add(lne,{
+	  txt=i,
+	  w="   ",
+	  cmd="",
+	  x=4,
+	  y=-4+8*i,
+	  c=2  
+  })
+  for j=1,linemax do
+   if j==#data[i]+1 then
+			 add(lne,{
+			  txt="+",
+			  w=" ",
+			  cmd="newcell",
+			  cmdy=i,
+			  x=-10+14*(j+1),
+			  y=-4+8*i, 
+			 })
+		 else
+		  add(lne,{
+		   txt=data[i][j],
+		   cmd="edit",
+		   cmdx=j,
+		   cmdy=i,
+		   x=-10+14*(j+1),
+		   y=-4+8*i,
+		   w="   "
+		  })
+   end
   end
   add(menu,lne)
  end
+ add(menu,{{
+  txt=" + ",
+  w="   ",
+  cmd="newline",
+  x=4,
+  y=-4+8*(#data+1), 
+ }})
 end
 -->8
 --update
@@ -145,7 +165,7 @@ function update_table()
  if btnp(⬇️) then
   cury+=1
  end
- cury=mid(1,cury,#menu)
+ cury=(cury-1)%#menu+1
  
  if btnp(⬅️) then
   curx-=1
@@ -153,22 +173,25 @@ function update_table()
  if btnp(➡️) then
   curx+=1
  end
- curx=mid(1,curx,#menu[cury])
- 
+ if cury<#menu then
+  curx=(curx-2)%(#menu[cury]-1)+2
+ else
+  curx=1
+ end
  local mymnu=menu[cury][curx]
  if mymnu.y+scrolly>110 then
-  scrolly-=1
+  scrolly-=4
  end
  if mymnu.y+scrolly<10 then
-  scrolly+=1
+  scrolly+=4
  end
  scrolly=min(0,scrolly)
  
  if mymnu.x+scrollx>110 then
-  scrollx-=1
+  scrollx-=2
  end
  if mymnu.x+scrollx<10 then
-  scrollx+=1
+  scrollx+=2
  end
  scrollx=min(0,scrollx)
  
@@ -178,6 +201,10 @@ function update_table()
    _upd=upd_type
    typetxt=tostr(mymnu.txt)
    typecur=#typetxt+1
+  elseif mymnu.cmd=="newline" then
+   add(data,{0})  
+  elseif mymnu.cmd=="newcell" then
+   add(data[mymnu.cmdy],0)
   end
  end
 end
@@ -188,11 +215,21 @@ function upd_type()
    -- enter
    local mymnu=menu[cury][curx]
    poke(0x5f30,1)
-   typetxt=tonum(typetxt)
-   if typetxt==nil then
-    typetxt=0
+   local typeval=tonum(typetxt)
+   if typeval==nil then
+    if mymnu.cmdx==#data[mymnu.cmdy] and typetxt=="" then
+     --delete cell
+     deli(data[mymnu.cmdy],mymnu.cmdx)
+     if mymnu.cmdx==1 then
+      deli(data,mymnu.cmdy)
+     end
+     _upd=update_table
+     return
+    end  
+    typeval=0
    end
-   data[mymnu.cmdy][mymnu.cmdx]=typetxt
+   
+   data[mymnu.cmdy][mymnu.cmdx]=typeval
    _upd=update_table
    return
   elseif key=="\b" then
