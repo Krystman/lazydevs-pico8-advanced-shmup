@@ -3,10 +3,6 @@ version 41
 __lua__
 
 -- goals
--- - collision system
--- - - player exploding
--- - - edit sprite name meta
-
 -- - schedule/spawn system
 -- - enemy brain system
 -- - bullet pattern system
@@ -18,7 +14,7 @@ __lua__
 --  - enemy scrolling in sync with bg
 --  - merge splash system?
 --  - maybe update splash and muzz in draw?
-     
+--  - freeze / die / inviz overhaul
      
 function _init()
  t=0
@@ -37,11 +33,13 @@ function _init()
  
  mapsegs=split "3,3,3,3,3,2,1,0,1,7,6,5,10,4,11,6,11,11,5,9,10,8,1,0,15,14,1,13,12,19,19,18,17,16,18,17,16,17,16,19,22,21,20,27,26,25,23,24,3,3"
  
+ freeze=0
+ 
  _upd=upd_menu
  _drw=drw_menu
  
  --★
- coldebug=true
+ --coldebug=true
 end
 
 function startgame()
@@ -72,6 +70,9 @@ function startgame()
   ani={3},
   col=28
  }
+ invul=0
+ inviz=0
+ freeze=0
  
  _upd=upd_game
  _drw=drw_game
@@ -97,8 +98,16 @@ function _update60()
    flip()
   end
  end
- t+=1
- _upd()
+ 
+ if freeze>0 then
+  freeze-=1
+  if freeze==0 then
+   die2()
+  end
+ else
+  t+=1
+  _upd()
+ end
 end
 
 -->8
@@ -132,7 +141,7 @@ function drw_game()
  end
  
  for p in all(parts) do
-  if p.age>=0 then
+  if p.age and p.age>=0 then
 			--animate color
 			if p.ctab then
 			 p.ctabv=p.ctabv or 0
@@ -144,22 +153,24 @@ function drw_game()
   end
  end
  
- camera()
  
  --ship
- drawobj(pspr)
- 
- --mspr(flr(shipspr*2.4+3.5),px,py)
- --if coldebug then
- -- pset(px,py,8)
- -- msprc(28,px,py)
- --end
- 
- local fframe=anilib[1][t\3%4+1]
- mspr(fframe,px-1,py+8)
- mspr(fframe,px+2,py+8)
- 
- camera(-xscroll,0)
+ if inviz<=0 then
+	 if invul<=0 or (time()*9)%1<0.5 then
+	  camera()
+	  if freeze>0 then
+	   pal(pal_wflash)
+	  end
+		 drawobj(pspr) 
+		 local fframe=anilib[1][t\3%4+1]
+		 mspr(fframe,px-1,py+8)
+		 mspr(fframe,px+2,py+8)
+		 pal()
+	  camera(-xscroll,0)
+	 end
+ else
+  inviz-=1
+ end
  
  for s in all(buls) do
   drawobj(s) 
@@ -260,10 +271,7 @@ function upd_game()
  -- shots vs enemies
  for e in all(enemies) do
   for s in all(shots) do
-   if not s.delme and col2(e,s) then 
-      --col(flr(xscroll+s.x-3),flr(s.y),8,16,
-      --flr(xscroll+e.x-7),flr(e.y-7),16,16) then
-     
+   if not s.delme and col2(e,s) then     
     e.flash=2
     s.delme=true
     
@@ -286,22 +294,20 @@ function upd_game()
   end
  end  
  -- ship vs enemies
- debug[4]="no"
- for e in all(enemies) do
-  if col2(pspr,e,true) then
-  
-  --col(flr(px-7),flr(py-7),16,16,
-  --       flr(xscroll+e.x-7),flr(e.y-7),16,16) then
-   debug[4]="yes"
-  end
- end
- 
- -- ship vs bullets
- for b in all(buls) do
-  if col2(pspr,b,true) then
-  --if col(flr(px-7),flr(py-7),16,16,
-  --       flr(xscroll+b.x-3),flr(b.y-3),7,7) then
-  end
+ if invul<=0 then
+	 for e in all(enemies) do
+	  if col2(pspr,e,true) then
+	   die()
+	  end
+	 end
+	 
+	 for b in all(buls) do
+	  if col2(pspr,b,true) then
+	   die()
+	  end
+	 end
+ else
+  invul-=1
  end
  
  for p in all(parts) do
@@ -409,6 +415,17 @@ function drawobj(obj)
 end
 -->8
 --gameplay
+
+function die()
+ freeze=30
+ sfx(2)
+end
+
+function die2()
+ explode(px-xscroll,py)
+ inviz=30
+ invul=120
+end
 
 function spawnen(eni,enx,eny)
  local en=enlib[eni]
@@ -936,3 +953,4 @@ e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6f0e4f0e4f0e0e5e0f0e0e5e0f0e4f0e4f09e9ec0c0c0
 __sfx__
 a2010000070401f6401f6300e6200d610050100301001050000100201000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 12030000256402c6602f6602f65027640206401a630136300e6500d650106401866022620106400b6300a65010630146101062001620006100061000000000000000000000000000000000000000000000000000
+000300003a0263f0463c0160000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

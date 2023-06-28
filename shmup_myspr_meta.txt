@@ -1,1 +1,1 @@
-meta=split2d"spr 1,0|spr 2,0|spr 3,0|spr 4,0|spr 5,0|spr 6,0|spr 7,0|spr 8,0|spr 9,0|spr 10,0|spr 11,0|spr 12,0|spr 13,0|spr 14,0|spr 15,0|spr 16,0|spr 17,0|spr 18,0|spr 19,0|spr 20,0|spr 21,0|spr 22,0|spr 23,0|spr 24,0|spr 25,0|spr 26,0|spr 27,0|spr 28,3|new,9|new,18"
+meta=split2d"ship 1,0|ship 2,0|ship 3,0|ship 4,0|ship 5,0|shipfix 1,0|shipfix 2,0|shot 1,0|shot 2,0|shot 3,0|muzz 1,0|muzz 2,0|muzz 3,0|muzz 4,0|jet 1,0|jet 2,0|jet 3,0|ufoa 1,0|ufoa 2,0|ufoa 3,0|ufoa fix,0|bul,0|splash 1,0|splash 2,0|splash 3,0|splash 4,0|bigufo,0|ship col,3|shot col,9|ufoa col,18"

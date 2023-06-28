@@ -11,9 +11,9 @@ Animations
 Enemy Data
 1 Ani
 2 Ani Speed
-2 Brain
-3 HP
-4 Col
+3 Brain
+4 HP
+5 Col
 
 Cols
 Shot: 29

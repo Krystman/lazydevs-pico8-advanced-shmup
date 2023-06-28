@@ -233,6 +233,12 @@ function update_edit()
    typetxt=s
    typecur=#typetxt+1
    typecall=enter_editcol
+  elseif mymnu.cmd=="sprhead" then
+   _upd=upd_type
+ 	 local s=tostr(meta[selspr][1])
+   typetxt=s
+   typecur=#typetxt+1
+   typecall=enter_editname 
   elseif mymnu.cmd=="delspr" then
 			deli(data,selspr)
 			deli(meta,selspr)
@@ -725,6 +731,33 @@ function enter_editcol()
  
  _upd=update_edit
  refresh_edit()
+end
+
+function enter_editname()
+
+ local mymnu=menu[cury][curx]
+ local typeval=filter(tostr(typetxt))
+ 
+ if typeval!="" then
+  meta[selspr][1]=typeval
+ end
+ 
+ _upd=update_edit
+ refresh_edit()
+end
+
+function filter(s)
+ local s2=""
+ for i=1,#s do
+  local c=s[i]
+  if c=="," then
+   c="."
+  elseif c=="|" then
+   c="/"
+  end
+  s2..=c
+ end
+ return s2
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
