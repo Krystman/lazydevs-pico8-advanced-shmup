@@ -12,6 +12,9 @@ function _init()
  arrname="sched"
  data=sched
  #include shmup_mapsegs.txt
+ #include shmup_enlib.txt
+ #include shmup_anilib.txt
+ #include shmup_myspr.txt
  ----------------------
  
  debug={}
@@ -33,7 +36,8 @@ function _init()
  scroll=0
  xscroll=0
  poke(0x5f2d, 1)
-
+ 
+ t=0
 end
 
 function _draw()
@@ -56,6 +60,7 @@ function _draw()
 end
 
 function _update60()
+ t+=1
  dokeys()
  domouse()
  mscroll=stat(36)
@@ -107,18 +112,25 @@ function draw_map()
   map(sx,sy,xscroll,scroll-((i-2)*64),18,8)
  end
  
- drawcur(mousex,mousey)
+ 
  
  camera(-xscroll,0)
  for sch in all(sched) do
   local schx=sch[3]
   local schy=sch[4]+scroll-sch[1]
   
-  rectfill(schx,schy,schx+16,schy+16,8)
+  local en=enlib[sch[2]]
+  local ani=anilib[en[1]]
+  
+  mspr(cyc(t,ani,en[2]),schx,schy)
+  
+  --rectfill(schx,schy,schx+16,schy+16,8)
  end
  camera()
  
- debug[1]=scroll
+ drawcur(mousex,mousey)
+ 
+ --debug[1]=scroll
  
 end
 
@@ -195,11 +207,29 @@ function update_map()
   scroll+=1 
  end
  
+ if clkl then
+  local sch={}
+  sch[1]=scroll-mousey-8
+  sch[2]=1
+  sch[3]=mousex-xscroll
+  sch[4]=-8
+  add(sched,sch)
+ end
+ 
+ if key=="t" then
+  _drw=draw_table
+  _upd=update_table 
+ end
 end
 
 function update_table()
  refresh_table()
-
+ 
+ if key=="m" then
+  _drw=draw_map
+  _upd=update_map 
+ end
+ 
  if btnp(⬆️) then
   cury-=1
  end
@@ -321,9 +351,57 @@ function split2d(s)
  end
  return arr
 end
+
+function mspr(si,sx,sy)
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ if _fx==2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ end
+ 
+ if _nx then
+  mspr(_nx,sx,sy)
+ end
+end
+
+function msprc(si,sx,sy)
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ rect(sx-_ox,sy-_oy,sx-_ox+_w-1,sy-_oy+_h-1,rnd({8,14,15}))
+end
+
+function drawobj(obj)
+ mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
+ 
+ --★
+ if coldebug and obj.col then
+  msprc(obj.col,obj.x,obj.y)
+ end
+end
+
+function cyc(age,arr,anis)
+ local anis=anis or 1
+ return arr[(age\anis-1)%#arr+1]
+end
+
+function sortsched()
+ if #sched<2 then return end
+ 
+ repeat
+	 local switch=false
+	 for i=1,#sched-1 do
+	  if sched[i][1]>sched[i+1][1] then   
+	   sched[i],sched[i+1]=sched[i+1],sched[i]
+	   switch=true
+	  end
+	 end
+ until switch==false
+
+end
 -->8
 --i/o
 function export()
+ sortsched()
+ 
  local s=arrname.."=split2d\""
  
  for i=1,#data do
