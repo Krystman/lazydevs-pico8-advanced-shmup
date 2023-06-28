@@ -13,3 +13,8 @@ Enemy Data
 2 Ani Speed
 2 Brain
 3 HP
+
+Cols
+Shot: 8
+Enemy: 18
+Ship: 28

@@ -4,6 +4,11 @@ __lua__
 
 -- goals
 -- - collision system
+-- - - expand editor
+-- - - test colisions
+-- - - add cols to enlib
+-- - - fx delete
+
 -- - schedule/spawn system
 -- - enemy brain system
 -- - bullet pattern system
@@ -13,7 +18,6 @@ __lua__
 --  - playert dies if they get hit by bullet
 --  - xscroll big pita 
 --  - enemy scrolling in sync with bg
---  - maybe our ship needs to be an object?
 --  - merge splash system?
 --  - maybe update splash and muzz in draw?
      
@@ -37,6 +41,9 @@ function _init()
  
  _upd=upd_menu
  _drw=drw_menu
+ 
+ --★
+ coldebug=true
 end
 
 function startgame()
@@ -59,6 +66,14 @@ function startgame()
  shotwait=0
  enemies={}
  buls={}
+ 
+ pspr={
+  x=0,
+  y=0,
+  age=0,
+  ani={3},
+  col=28
+ }
  
  _upd=upd_game
  _drw=drw_game
@@ -134,8 +149,13 @@ function drw_game()
  camera()
  
  --ship
- mspr(flr(shipspr*2.4+3.5),px,py)
- pset(px,py,8)
+ drawobj(pspr)
+ 
+ --mspr(flr(shipspr*2.4+3.5),px,py)
+ --if coldebug then
+ -- pset(px,py,8)
+ -- msprc(28,px,py)
+ --end
  
  local fframe=anilib[1][t\3%4+1]
  mspr(fframe,px-1,py+8)
@@ -209,6 +229,10 @@ function upd_game()
  
  lastdir=dir
  
+ pspr.x=flr(px)
+ pspr.y=flr(py)
+ pspr.ani[1]=flr(shipspr*2.4+3.5)
+ 
  --xscroll=mid(0,(px-10)/100,1)*-16
  --2441
  xscroll=mid(0,(px-10)/108,1)\-0.0625
@@ -238,9 +262,10 @@ function upd_game()
  -- shots vs enemies
  for e in all(enemies) do
   for s in all(shots) do
-   if not s.delme and 
-      col(flr(xscroll+s.x-3),flr(s.y),8,16,
-      flr(xscroll+e.x-7),flr(e.y-7),16,16) then
+   if not s.delme and col2(e,s) then 
+      --col(flr(xscroll+s.x-3),flr(s.y),8,16,
+      --flr(xscroll+e.x-7),flr(e.y-7),16,16) then
+     
     e.flash=2
     s.delme=true
     
@@ -263,16 +288,21 @@ function upd_game()
   end
  end  
  -- ship vs enemies
+ debug[4]="no"
  for e in all(enemies) do
-  if col(flr(px-7),flr(py-7),16,16,
-         flr(xscroll+e.x-7),flr(e.y-7),16,16) then
+  if col2(pspr,e,true) then
+  
+  --col(flr(px-7),flr(py-7),16,16,
+  --       flr(xscroll+e.x-7),flr(e.y-7),16,16) then
+   debug[4]="yes"
   end
  end
  
  -- ship vs bullets
  for b in all(buls) do
-  if col(flr(px-7),flr(py-7),16,16,
-         flr(xscroll+b.x-3),flr(b.y-3),7,7) then
+  if col2(pspr,b,true) then
+  --if col(flr(px-7),flr(py-7),16,16,
+  --       flr(xscroll+b.x-3),flr(b.y-3),7,7) then
   end
  end
  
@@ -310,6 +340,16 @@ function mspr(si,sx,sy)
  end
 end
 
+--★
+function msprc(si,sx,sy)
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ if _fx==2 then
+  _w*=2
+ end
+ --sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ rect(sx-_ox,sy-_oy,sx-_ox+_w-1,sy-_oy+_h-1,rnd({8,14,15}))
+end
+
 function split2d(s)
  local arr=split(s,"|",false)
  --for k, v in pairs(arr) do
@@ -317,6 +357,36 @@ function split2d(s)
   arr[k] = split(v)
  end
  return arr
+end
+
+function col2(oa,ob,xscr)
+ --★ fx delete
+ local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(myspr[oa.col])
+ local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(myspr[ob.col])
+
+ if _afx==2 then
+  _aw*=2
+ end
+ if _bfx==2 then
+  _bw*=2
+ end
+ 
+ local a_left=flr(oa.x)-_aox-(xscr and xscroll or 0)
+ local a_top=flr(oa.y)-_aoy
+ local a_right=a_left+_aw-1
+ local a_bottom=a_top+_ah-1
+ 
+ local b_left=flr(ob.x)-_box
+ local b_top=flr(ob.y)-_boy
+ local b_right=b_left+_bw-1
+ local b_bottom=b_top+_bh-1
+
+ if a_top>b_bottom then return false end
+ if b_top>a_bottom then return false end
+ if a_left>b_right then return false end
+ if b_left>a_right then return false end
+ 
+ return true
 end
 
 function col(x1,y1,w1,h1,x2,y2,w2,h2)
@@ -345,6 +415,11 @@ end
 
 function drawobj(obj)
  mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
+ 
+ --★
+ if coldebug and obj.col then
+  msprc(obj.col,obj.x,obj.y)
+ end
 end
 -->8
 --gameplay
@@ -366,7 +441,8 @@ function spawnen(eni,enx,eny)
   brain=en[3],
   age=0,
   flash=0,
-  hp=en[4]
+  hp=en[4],
+  col=18
  })
 
  --[[add(buls,{
@@ -375,7 +451,8 @@ function spawnen(eni,enx,eny)
 		sx=0,
 		sy=0,
 		ani=anilib[6],
-		age=1
+		age=1,
+		col=1
 	})]]--
 	
 end
@@ -444,7 +521,8 @@ function shoot()
   sy=shotspd,
   ani=anilib[3],
   anis=2,
-  age=(t\2)%3+1
+  age=(t\2)%3+1,
+  col=8
  })
  add(shots,{
   x=px+4-xscroll,
@@ -453,7 +531,8 @@ function shoot()
   sy=shotspd,
   ani=anilib[3],
   anis=2,
-  age=(t\2)%3+1
+  age=(t\2)%3+1,
+  col=8
  })
  
  add(parts,{
