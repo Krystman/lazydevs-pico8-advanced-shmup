@@ -3,17 +3,13 @@ version 41
 __lua__
 
 -- goals
--- - animation system
---   - animation library
---   - animation library editor
-
 -- - collision system
--- - enemy database system
 -- - schedule/spawn system
 -- - enemy brain system
 -- - bullet pattern system
 
 -- smol things
+--  - anilib in drawobj
 --  - playert dies if they get hit by bullet
 --  - xscroll big pita 
 --  - enemy scrolling in sync with bg
@@ -27,15 +23,13 @@ function _init()
  debug={}
   
  #include shmup_myspr.txt
+ #include shmup_anilib.txt
+ #include shmup_enlib.txt
   
  butarr=split "1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1"
  dirx=split "0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7"
  diry=split "0, 0,0,-1,1, -0.7,-0.7,0.7,0.7"
  
- flamearr=split "15,16,17,16"
- shotarr=split "8,9,10"
- muzzarr=split "11,12,13,14"
-
  pal_flash=split "8,8,8,8,8,14,7,14,15,7,7,8,8,14,7"
  pal_wflash=split "7,7,7,7,7,7,7,7,7,7,7,7,7,7,7"
  
@@ -69,7 +63,7 @@ function startgame()
  _upd=upd_game
  _drw=drw_game
  
- spawnen()
+ spawnen(2,64,24)
  
 end
 
@@ -143,7 +137,7 @@ function drw_game()
  mspr(flr(shipspr*2.4+3.5),px,py)
  pset(px,py,8)
  
- local fframe=flamearr[t\3%4+1]
+ local fframe=anilib[1][t\3%4+1]
  mspr(fframe,px-1,py+8)
  mspr(fframe,px+2,py+8)
  
@@ -256,7 +250,7 @@ function upd_game()
 			  y=s.y+4,
 			  maxage=5,
 			  age=-1,
-			  ani={23,24,25,26}
+			  ani=anilib[4]
 			 })  
     
     e.hp-=1
@@ -355,35 +349,34 @@ end
 -->8
 --gameplay
 
-function spawnen()
-
+function spawnen(eni,enx,eny)
+ local en=enlib[eni]
+ 
  add(enemies,{
-  x=64,
-  y=24,
+  x=enx,
+  y=eny,
  
   --x=10+rnd(128),
   --y=16-rnd(32),
 
-
-  ani={18,19,20},
-  anis=6,
-  si=1,
+  ani=anilib[en[1]],
+  anis=en[2],
   sx=0,
   sy=0,
-  brain=2,
+  brain=en[3],
   age=0,
   flash=0,
-  hp=10015
+  hp=en[4]
  })
 
- add(buls,{
+ --[[add(buls,{
 		x=90,
 		y=64,
 		sx=0,
 		sy=0,
-		ani={22},
+		ani=anilib[6],
 		age=1
-	})
+	})]]--
 	
 end
 
@@ -403,7 +396,7 @@ function doenemies()
   				sx=0,
   				sy=2,
   				ani={22},
-  				si=1
+  				age=1
  				})
     end
     -- stay
@@ -449,7 +442,7 @@ function shoot()
   y=py-14,
   sx=0,
   sy=shotspd,
-  ani=shotarr,
+  ani=anilib[3],
   anis=2,
   age=(t\2)%3+1
  })
@@ -458,7 +451,7 @@ function shoot()
   y=py-14,
   sx=0,
   sy=shotspd,
-  ani=shotarr,
+  ani=anilib[3],
   anis=2,
   age=(t\2)%3+1
  })
@@ -468,7 +461,7 @@ function shoot()
    maxage=5,
    x=-4,
    y=-4,
-   ani=muzzarr,
+   ani=anilib[2],
    plock=true
  })
  add(parts,{
@@ -476,7 +469,7 @@ function shoot()
    maxage=5,
    x=4,
    y=-4,
-   ani=muzzarr,
+   ani=anilib[2],
    plock=true
  })
 

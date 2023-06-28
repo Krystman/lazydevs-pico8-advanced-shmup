@@ -1,0 +1,15 @@
+Animations
+
+01 flamearr=split
+02 muzzarr=split
+03 shotarr=split
+04 splash
+05 enemy
+06 enemy bul
+07 big enemy
+
+Enemy Data
+1 Ani
+2 Ani Speed
+2 Brain
+3 HP
