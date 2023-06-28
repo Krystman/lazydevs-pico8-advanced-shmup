@@ -121,7 +121,7 @@ end
 function refresh_table()
  menu={}
  
- local caps={"","ani","asp","brn","hp"}
+ local caps={"","ani","asp","brn","hp","col"}
  
  local lne={}
  for i=1,#caps do

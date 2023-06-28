@@ -4,10 +4,8 @@ __lua__
 
 -- goals
 -- - collision system
--- - - expand editor
--- - - test colisions
--- - - add cols to enlib
--- - - fx delete
+-- - - player exploding
+-- - - edit sprite name meta
 
 -- - schedule/spawn system
 -- - enemy brain system
@@ -78,7 +76,7 @@ function startgame()
  _upd=upd_game
  _drw=drw_game
  
- spawnen(2,64,24)
+ spawnen(1,64,24)
  
 end
 
@@ -343,10 +341,6 @@ end
 --★
 function msprc(si,sx,sy)
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
- if _fx==2 then
-  _w*=2
- end
- --sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
  rect(sx-_ox,sy-_oy,sx-_ox+_w-1,sy-_oy+_h-1,rnd({8,14,15}))
 end
 
@@ -360,16 +354,8 @@ function split2d(s)
 end
 
 function col2(oa,ob,xscr)
- --★ fx delete
  local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(myspr[oa.col])
  local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(myspr[ob.col])
-
- if _afx==2 then
-  _aw*=2
- end
- if _bfx==2 then
-  _bw*=2
- end
  
  local a_left=flr(oa.x)-_aox-(xscr and xscroll or 0)
  local a_top=flr(oa.y)-_aoy
@@ -438,11 +424,11 @@ function spawnen(eni,enx,eny)
   anis=en[2],
   sx=0,
   sy=0,
-  brain=en[3],
+  brain=2,--en[3],
   age=0,
   flash=0,
   hp=en[4],
-  col=18
+  col=en[5]
  })
 
  --[[add(buls,{
@@ -473,7 +459,8 @@ function doenemies()
   				sx=0,
   				sy=2,
   				ani={22},
-  				age=1
+  				age=1,
+  				col=22
  				})
     end
     -- stay
@@ -522,7 +509,7 @@ function shoot()
   ani=anilib[3],
   anis=2,
   age=(t\2)%3+1,
-  col=8
+  col=29
  })
  add(shots,{
   x=px+4-xscroll,
@@ -532,7 +519,7 @@ function shoot()
   ani=anilib[3],
   anis=2,
   age=(t\2)%3+1,
-  col=8
+  col=29
  })
  
  add(parts,{

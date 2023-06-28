@@ -5,11 +5,21 @@ function _init()
 
  --- customize here ---
  #include shmup_myspr.txt
+ #include shmup_myspr_meta.txt
  file="shmup_myspr.txt"
+ filem="shmup_myspr_meta.txt"
  arrname="myspr"
  data=myspr
  reload(0x0,0x0,0x2000,"cowshmup.p8")
  ----------------------
+ 
+ --[[meta={}
+ for x=1,#data do
+  mobj={}
+  mobj[1]="spr "..x
+  mobj[2]=0
+  meta[x]=mobj
+ end]]--
  
  debug={}
  msg={}
@@ -80,7 +90,12 @@ function draw_edit()
  
  -- draw sprite
  if selspr then
-  wrapmspr(selspr,63,63)
+  if meta[selspr][2]>0 then
+   wrapmspr(meta[selspr][2],63,63)
+   msprc(selspr,63,63)
+  else
+   wrapmspr(selspr,63,63)
+  end
  end
  
  -- blinking dot
@@ -101,8 +116,13 @@ function draw_list()
  
  -- draw sprite
  local mymnu=menu[cury][curx]
- if mymnu then
-  wrapmspr(mymnu.cmdy,63,63)
+ if mymnu and mymnu.cmdy then
+  if meta[mymnu.cmdy][2]>0 then
+   wrapmspr(meta[mymnu.cmdy][2],63,63)
+   msprc(mymnu.cmdy,63,63)
+  else
+   wrapmspr(mymnu.cmdy,63,63)
+  end
  end
  
  if (time()*2)%1<0.5 then
@@ -179,7 +199,7 @@ function update_edit()
    selspr+=1
   end
   selspr=mid(1,selspr,#data)	
- elseif cury==10 then
+ elseif cury==11 then
   curx=1
  else
   curx=2
@@ -207,8 +227,15 @@ function update_edit()
    typetxt=s
    typecur=#typetxt+1
    typecall=enter_edit
+  elseif mymnu.cmd=="editcol" then
+   _upd=upd_type
+ 	 local s=tostr(meta[selspr][2])
+   typetxt=s
+   typecur=#typetxt+1
+   typecall=enter_editcol
   elseif mymnu.cmd=="delspr" then
 			deli(data,selspr)
+			deli(meta,selspr)
 			selspr-=1
 			if selspr==0 then
 			 selspr=1
@@ -260,6 +287,7 @@ function update_list()
   local mymnu=menu[cury][curx]
   if mymnu.cmd=="newline" then
    add(data,{0,0,0,0,0,0})
+   add(meta,{"new",0})
   elseif mymnu.cmd=="editspr" then
    selspr=mymnu.cmdy
    _upd=update_edit
@@ -438,6 +466,15 @@ function mspr(si,sx,sy)
  end
 end
 
+function msprc(si,sx,sy)
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ if _fx==2 then
+  _w*=2
+ end
+ --sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ rect(sx-_ox,sy-_oy,sx-_ox+_w-1,sy-_oy+_h-1,rnd({8,14,15}))
+end
+
 function spacejam(n)
  local ret=""
  for i=1,n do
@@ -464,6 +501,22 @@ function export()
  
  s..="\""
  printh(s,file,true)
+ 
+ local s="meta=split2d\""
+ for i=1,#meta do
+  if i>1 then
+   s..="|"
+  end
+  for j=1,#meta[i] do
+	  if j>1 then
+	   s..=","
+	  end
+	  s..=meta[i][j]
+  end
+ end
+ s..="\""
+ printh(s,filem,true)
+ 
  add(msg,{txt="exported!",t=120})
  --debug[1]="exported!"
 end
@@ -473,7 +526,7 @@ function refresh_edit()
  menu={}
  
  add(menu,{{
-	 txt="< sprite "..selspr.." >",
+	 txt="< "..selspr.." "..meta[selspr][1].." >",
 	 w="",
 	 cmd="sprhead",
 	 x=2,
@@ -507,12 +560,30 @@ function refresh_edit()
 		}) 
  end
  
+ local coltxt=meta[selspr][2]==0 and "off" or tostr(meta[selspr][2])
+	
+	add(menu,{
+		{
+		 txt="col:",
+		 w=spacejam(4),
+		 x=2,
+		 y=4+9*7
+		},{
+		 txt=coltxt,
+		 w=spacejam(#coltxt),
+		 cmd="editcol",
+		 cmdy=selspr,
+		 x=19,
+		 y=4+9*7
+		}
+	})
+ 
  add(menu,{{
 	 txt="delete",
 	 w="",
 	 cmd="delspr",
 	 x=2,
-	 y=4+9*7
+	 y=5+10*7
  }})
 end
 
@@ -525,7 +596,7 @@ function refresh_list()
    linemax+=1  
   end
   add(lne,{
-	  txt="spr "..i,
+	  txt=i.." "..meta[i][1],
 	  w="",
 	  cmd="editspr",
 	  cmdy=i,
@@ -637,6 +708,21 @@ function enter_edit()
   data[mymnu.cmdy][mymnu.cmdx]=typeval
  end 
 
+ _upd=update_edit
+ refresh_edit()
+end
+
+function enter_editcol()
+
+ local mymnu=menu[cury][curx]
+ local typeval=tonum(typetxt)
+ 
+ if typeval==nil or typeval<1 then
+  meta[selspr][2]=0
+ else
+  meta[selspr][2]=typeval
+ end
+ 
  _upd=update_edit
  refresh_edit()
 end
