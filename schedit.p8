@@ -17,8 +17,8 @@ function _init()
  debug={}
  msg={}
  
- _drw=draw_table
- _upd=update_table
+ _drw=draw_map
+ _upd=update_map
  
  menuitem(1,"export",export)
  
@@ -31,8 +31,9 @@ function _init()
  scrollx=0
  
  scroll=0
- 
+ xscroll=0
  poke(0x5f2d, 1)
+
 end
 
 function _draw()
@@ -56,6 +57,7 @@ end
 
 function _update60()
  dokeys()
+ domouse()
  mscroll=stat(36)
  
  _upd()
@@ -72,19 +74,56 @@ function dokeys()
  end
  
 end
+
+function domouse()
+ mousex=stat(32)
+ mousey=stat(33)
+ 
+ if stat(34)==0 then
+  clkwait=false
+ end
+ clkl=false
+ clkr=false
+ if not clkwait then
+  if stat(34)==1 then
+   clkl=true
+   clkwait=true
+  elseif stat(34)==2 then
+   clkl=true
+   clkwait=true  
+  end
+ end
+ 
+end
 -->8
 --draw
 
-function draw_table()
+function draw_map()
  cls(2)
-
  for i=1,#mapsegs do
   local segnum=mapsegs[i]
   local sx=segnum\4*18
   local sy=segnum%4*8
-  map(sx,sy,0,scroll-((i-2)*64),18,8)
+  map(sx,sy,xscroll,scroll-((i-2)*64),18,8)
  end
  
+ drawcur(mousex,mousey)
+ 
+ camera(-xscroll,0)
+ for sch in all(sched) do
+  local schx=sch[3]
+  local schy=sch[4]+scroll-sch[1]
+  
+  rectfill(schx,schy,schx+16,schy+16,8)
+ end
+ camera()
+ 
+ debug[1]=scroll
+ 
+end
+
+function draw_table()
+ cls(2)
  --spr(0,0,0,16,16)
  
 	if menu then
@@ -130,61 +169,36 @@ function draw_table()
  ]]
 end
 
-function refresh_table()
- menu={}
- for i=1,#data do
-  local lne={}
-  local linemax=#data[i]
-  if i==cury then
-   linemax+=1  
-  end
-  add(lne,{
-	  txt=i,
-	  w="   ",
-	  cmd="",
-	  x=4,
-	  y=-4+8*i,
-	  c=2  
-  })
-  for j=1,linemax do
-   if j==#data[i]+1 then
-			 add(lne,{
-			  txt="+",
-			  w=" ",
-			  cmd="newcell",
-			  cmdy=i,
-			  x=-10+14*(j+1),
-			  y=-4+8*i, 
-			 })
-		 else
-		  add(lne,{
-		   txt=data[i][j],
-		   cmd="edit",
-		   cmdx=j,
-		   cmdy=i,
-		   x=-10+14*(j+1),
-		   y=-4+8*i,
-		   w="   "
-		  })
-   end
-  end
-  add(menu,lne)
- end
- add(menu,{{
-  txt=" + ",
-  w="   ",
-  cmd="newline",
-  x=4,
-  y=-4+8*(#data+1), 
- }})
+function drawcur(cx,cy)
+ local col=rnd({6,7})
+ line(cx,cy-1,cx,cy-2,col)
+ line(cx,cy+1,cx,cy+2,col)
+ line(cx-1,cy,cx-2,cy,col)
+ line(cx+1,cy,cx+2,cy,col)
+ 
 end
 -->8
 --update
 
-function update_table()
- refresh_table()
+function update_map()
+ refresh_map()
 
  scroll+=mscroll*8
+ 
+ xscroll=mid(0,(mousex-10)/108,1)\-0.0625
+ 
+ if btnp(⬇️) then
+  scroll-=1
+ end
+  
+ if btnp(⬆️) then
+  scroll+=1 
+ end
+ 
+end
+
+function update_table()
+ refresh_table()
 
  if btnp(⬆️) then
   cury-=1
@@ -328,6 +342,61 @@ function export()
  printh(s,file,true)
  add(msg,{txt="exported!",t=120})
  --debug[1]="exported!"
+end
+-->8
+--ui
+
+function refresh_map()
+ menu={}
+end
+
+function refresh_table()
+ menu={}
+ for i=1,#data do
+  local lne={}
+  local linemax=#data[i]
+  if i==cury then
+   linemax+=1  
+  end
+  add(lne,{
+	  txt=i,
+	  w="   ",
+	  cmd="",
+	  x=4,
+	  y=-4+8*i,
+	  c=2  
+  })
+  for j=1,linemax do
+   if j==#data[i]+1 then
+			 add(lne,{
+			  txt="+",
+			  w=" ",
+			  cmd="newcell",
+			  cmdy=i,
+			  x=-10+14*(j+1),
+			  y=-4+8*i, 
+			 })
+		 else
+		  add(lne,{
+		   txt=data[i][j],
+		   cmd="edit",
+		   cmdx=j,
+		   cmdy=i,
+		   x=-10+14*(j+1),
+		   y=-4+8*i,
+		   w="   "
+		  })
+   end
+  end
+  add(menu,lne)
+ end
+ add(menu,{{
+  txt=" + ",
+  w="   ",
+  cmd="newline",
+  x=4,
+  y=-4+8*(#data+1), 
+ }})
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
