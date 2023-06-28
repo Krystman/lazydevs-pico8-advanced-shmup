@@ -4,6 +4,9 @@ __lua__
 
 -- goals
 -- - animation system
+--   - animation library
+--   - animation library editor
+
 -- - collision system
 -- - enemy database system
 -- - schedule/spawn system
@@ -60,8 +63,6 @@ function startgame()
  parts={}
  shots={}
  shotwait=0
- muzz={}
- splash={}
  enemies={}
  buls={}
  
@@ -72,7 +73,7 @@ function startgame()
  
 end
 
-function _draw()
+function _draw() 
  _drw()
  
  --★
@@ -84,6 +85,11 @@ function _draw()
 end
 
 function _update60()
+ if slowmo then
+  for i=0,60 do
+   flip()
+  end
+ end
  t+=1
  _upd()
 end
@@ -95,6 +101,27 @@ function drw_game()
  camera(-xscroll,0)
  for seg in all(cursegs) do
   map(seg.x,seg.y,0,scroll-seg.o,18,8)
+ end
+ 
+ for e in all(enemies) do
+  if e.flash>0 then
+   e.flash-=1
+   pal(pal_flash)
+  end
+  drawobj(e) 
+  --mspr(cyc(e.age,e.ani,e.anis),e.x,e.y)
+  
+  pset(e.x,e.y,8)
+  pal()
+ end
+ 
+ for s in all(shots) do
+  drawobj(s)  
+  --mspr(cyc(s.age,s.ani,s.anis),s.x,s.y)
+
+  if s.delme then
+   del(shots,s)
+  end
  end
  
  for p in all(parts) do
@@ -109,35 +136,8 @@ function drw_game()
    p.draw(p)
   end
  end
-  
- for e in all(enemies) do
-  if e.flash>0 then
-   e.flash-=1
-   pal(pal_flash)
-  end
-  mspr(e.sani[flr(e.si)],e.x,e.y)
-  pset(e.x,e.y,8)
-  pal()
- end
- 
- for s in all(splash) do    
-  mspr(s.sani[flr(s.si)],s.x,s.y)
-  --pset(s.x,s.y,8)
- end
- 
- for s in all(shots) do    
-  mspr(s.sani[flr(s.si)],s.x,s.y)
-  if s.delme then
-   del(shots,s)
-  end
- end
  
  camera()
- 
- for m in all(muzz) do    
-  mspr(m.sani[flr(m.si)],px+m.x,py+m.y)
- end
- 
  
  --ship
  mspr(flr(shipspr*2.4+3.5),px,py)
@@ -149,8 +149,9 @@ function drw_game()
  
  camera(-xscroll,0)
  
- for s in all(buls) do    
-  mspr(s.sani[flr(s.si)],s.x,s.y)
+ for s in all(buls) do
+  drawobj(s) 
+  --mspr(cyc(s.age,s.ani,s.anis),s.x,s.y)
  end
  
  camera()
@@ -238,7 +239,6 @@ function upd_game()
  
  dobuls(shots)
  dobuls(buls)
- domuzz()
  doenemies()
  
  -- shots vs enemies
@@ -249,12 +249,16 @@ function upd_game()
       flr(xscroll+e.x-7),flr(e.y-7),16,16) then
     e.flash=2
     s.delme=true
-    add(splash,{
-     x=s.x,
-     y=s.y+4,  
-		   sani={0,23,24,25,26},
-		   si=0    
-    })
+    
+    add(parts,{
+			  draw=sprite,
+			  x=s.x,
+			  y=s.y+4,
+			  maxage=5,
+			  age=-1,
+			  ani={23,24,25,26}
+			 })  
+    
     e.hp-=1
     
     if e.hp<=0 then
@@ -278,7 +282,6 @@ function upd_game()
   end
  end
  
- dosplash()
  for p in all(parts) do
   dopart(p)
  end
@@ -286,7 +289,7 @@ function upd_game()
 end
 
 function upd_menu()
- if btnp(❎) then
+ if btnp(❎) or btnp(🅾️) then
   startgame()
  end
 end
@@ -302,9 +305,6 @@ function rndrange(low,high)
 end
 
 function mspr(si,sx,sy)
- if si==0 then return end
-
- --2300 
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
  sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
  if _fx==2 then
@@ -343,6 +343,15 @@ function col(x1,y1,w1,h1,x2,y2,w2,h2)
  
  return true
 end
+
+function cyc(age,arr,anis)
+ local anis=anis or 1
+ return arr[(age\anis-1)%#arr+1]
+end
+
+function drawobj(obj)
+ mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
+end
 -->8
 --gameplay
 
@@ -356,7 +365,8 @@ function spawnen()
   --y=16-rnd(32),
 
 
-  sani={18,19,20},
+  ani={18,19,20},
+  anis=6,
   si=1,
   sx=0,
   sy=0,
@@ -365,16 +375,16 @@ function spawnen()
   flash=0,
   hp=10015
  })
- --[[
+
  add(buls,{
 		x=90,
 		y=64,
 		sx=0,
 		sy=0,
-		sani={22},
-		si=1
+		ani={22},
+		age=1
 	})
-	--]]
+	
 end
 
 function doenemies()
@@ -392,7 +402,7 @@ function doenemies()
   				y=e.y,
   				sx=0,
   				sy=2,
-  				sani={22},
+  				ani={22},
   				si=1
  				})
     end
@@ -411,26 +421,16 @@ function doenemies()
   e.x+=e.sx
   e.y+=e.sy
   
-  e.si+=0.15
   e.age+=1
-  
-  if flr(e.si)>#e.sani then
-   e.si=1
-  end
-  
  end
 end
 
 function dobuls(arr)
  for s in all(arr) do
+  s.age+=1
   s.x+=s.sx
   s.y+=s.sy
-  s.si+=0.5
-  
-  if flr(s.si)>#s.sani then
-   s.si=1
-  end
-  
+    
   if s.y<-16 or s.y>130 then
    del(arr,s)
   end
@@ -439,6 +439,8 @@ end
 
 
 function shoot()
+ --slowmo=true
+ 
  local shotspd=-6
  shotwait=2
  
@@ -447,30 +449,37 @@ function shoot()
   y=py-14,
   sx=0,
   sy=shotspd,
-  sani=shotarr,
-  si=(t\2)%3+1,
+  ani=shotarr,
+  anis=2,
+  age=(t\2)%3+1
  })
  add(shots,{
   x=px+4-xscroll,
   y=py-14,
   sx=0,
   sy=shotspd,
-  sani=shotarr,
-  si=(t\2)%3+1,
+  ani=shotarr,
+  anis=2,
+  age=(t\2)%3+1
  })
  
- add(muzz,{
-  x=-4,
-  y=-4,
-  sani=muzzarr,
-  si=0,
+ add(parts,{
+   draw=sprite,
+   maxage=5,
+   x=-4,
+   y=-4,
+   ani=muzzarr,
+   plock=true
  })
- add(muzz,{
-  x=4,
-  y=-4,
-  sani=muzzarr,
-  si=0,
+ add(parts,{
+   draw=sprite,
+   maxage=5,
+   x=4,
+   y=-4,
+   ani=muzzarr,
+   plock=true
  })
+
  sfx(0)
 end
 -->8
@@ -635,25 +644,6 @@ function sparkblast(ex,ey,ewait)
  end
 end
 
-function domuzz()
- for m in all(muzz) do
-  m.si+=1 
-  if flr(m.si)>#m.sani then
-   del(muzz,m)
-  end
- end
-end
-
-function dosplash()
- for s in all(splash) do
-  s.si+=1
-  s.si=max(s.si,1) 
-  if flr(s.si)>#s.sani then
-   del(splash,s)
-  end
- end
-end
-
 function blob(p)
  local myr=flr(p.r)
  
@@ -708,6 +698,19 @@ function spark(p)
   line(p.x+i,p.y,p.x+p.sx*2+i,p.y+p.sy*2,p.c)
  end
  
+end
+
+function sprite(p)
+ if p.age<=0 then
+  return
+ end
+ 
+ local _x,_y=p.x,p.y
+ if p.plock then
+  _x+=px-xscroll
+  _y+=py
+ end
+ mspr(cyc(p.age,p.ani,p.anis),_x,_y)
 end
 __gfx__
 000000cc0000000000000cc00000000000000c0009009090000700000700070000000700000fff0000a00009000000900900000eeeeeeeee000000000e070070
