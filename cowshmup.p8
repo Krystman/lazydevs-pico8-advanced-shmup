@@ -23,7 +23,9 @@ function _init()
  #include shmup_myspr.txt
  #include shmup_anilib.txt
  #include shmup_enlib.txt
-  
+ #include shmup_sched.txt
+ #include shmup_mapsegs.txt
+ 
  butarr=split "1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1"
  dirx=split "0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7"
  diry=split "0, 0,0,-1,1, -0.7,-0.7,0.7,0.7"
@@ -31,7 +33,6 @@ function _init()
  pal_flash=split "8,8,8,8,8,14,7,14,15,7,7,8,8,14,7"
  pal_wflash=split "7,7,7,7,7,7,7,7,7,7,7,7,7,7,7"
  
- mapsegs=split "3,3,3,3,3,2,1,0,1,7,6,5,10,4,11,6,11,11,5,9,10,8,1,0,15,14,1,13,12,19,19,18,17,16,18,17,16,17,16,19,22,21,20,27,26,25,23,24,3,3"
  
  freeze=0
  
@@ -50,7 +51,7 @@ function startgame()
  lastdir=0
  shipspr=0
 
- scroll=300
+ scroll=0
  xscroll=0
  mapsegi=0
  cursegs={}
@@ -61,7 +62,8 @@ function startgame()
  shots={}
  shotwait=0
  enemies={}
- buls={}
+ buls={} 
+ schedi=1
  
  pspr={
   x=0,
@@ -76,8 +78,6 @@ function startgame()
  
  _upd=upd_game
  _drw=drw_game
- 
- spawnen(1,64,24)
  
 end
 
@@ -218,6 +218,12 @@ function upd_game()
    deli(cursegs,1)
   end
  
+ end
+ 
+ --spawning
+ if schedi<=#sched and sched[schedi][1]<scroll then
+  spawnen(sched[schedi][2],sched[schedi][3],sched[schedi][4])
+  schedi+=1
  end
  
  --movement
@@ -441,7 +447,7 @@ function spawnen(eni,enx,eny)
   anis=en[2],
   sx=0,
   sy=0,
-  brain=2,--en[3],
+  brain=en[3],
   age=0,
   flash=0,
   hp=en[4],
