@@ -103,15 +103,61 @@ I want to have a ship that flies around, scrolling background and simple shootin
 
 SECOND GOAL: Have some basic gameplay. Arrive at the "Great Wall"
 I want 
- - to spawn an enemy
- - the enemy to move somehow
- - the enemy to shoot a bullet
- - to be able to hit the enemy
- - the enemy to explode
- - to die if I get hit by bullet
+ X to spawn an enemy
+ X the enemy to move somehow
+ X the enemy to shoot a bullet
+ X to be able to hit the enemy
+ X the enemy to explode
+ > to die if I get hit by bullet
 
  - How do we conserve Sprite Space?
- - - How do we compress 2D Arrays?
- - - We need a tool to create mysprites
- - - How do we deal with animations?
+ - X How do we compress 2D Arrays?
+ - X We need a tool to create mysprites
+ - > How do we deal with animations?
+
+
+
+SECOND GOAL: Great Wall of Shmups
+
+-- - Animation System
+     - Make every animation work the same (Consolidation)
+
+-- - Collision System
+     - unified collision box logistics
+
+-- - Enemy Database System
+     - we need a place to store enemy data
+     - HP
+     - Brain (!!!!)
+     - Animation (!!!!)
+     - Collision Box (!!!!)
+     
+-- - Schedule/Spawn System
+     - Critical Creative Payload
+     - Needs a comfortable editor
+     - Good previews of enemy formations (Brain System linkup !!!!)
+     - Enemy database hookup (!!!!)
+
+-- - Enemy Brain System
+     - Tricky!
+     - Also needs an editor
+     - how enemy behavior?
+       - highly senstive numbers
+       - need immediate feedback 
+       - need and efficient way to define
+     - Bullet System hookup (!!!!)
+
+-- - Bullet Pattern System
+     - Tricky as well
+     - Also needs an editor
+
+- Smol things
+  - playert dies if they get hit by bullet
+  - xscroll big pita 
+  - enemy scrolling in sync with bg
+  - maybe our ship needs to be an object?
+  - merge splash system?
+  - maybe update splash and muzz in draw?
+     
+
 
