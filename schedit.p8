@@ -37,6 +37,8 @@ function _init()
  xscroll=0
  poke(0x5f2d, 1)
  
+ selsched=nil
+ 
  t=0
 end
 
@@ -121,9 +123,30 @@ function draw_map()
   
   local en=enlib[sch[2]]
   local ani=anilib[en[1]]
-  
+
+  if sch==selsched then
+   local col=11+16*12
+   fillp(flr(▥))
+   line(0,sch[4],127,sch[4],col)
+   fillp(flr(▤))
+   line(sch[3],0,sch[3],127,col)
+   
+   line(sch[3],sch[4],sch[3]-128,sch[4]+128,col)
+   line(sch[3],sch[4],sch[3]+128,sch[4]+128,col)
+   line(sch[3],sch[4],sch[3]-128,sch[4]-128,col)
+   line(sch[3],sch[4],sch[3]+128,sch[4]-128,col)
+   fillp() 
+  end
+    
   mspr(cyc(t,ani,en[2]),schx,schy)
   
+  if sch==selsched then
+   local col=rnd({6,7})
+   rect(schx-8,schy-8,schx+9,schy+9,col)
+   
+   
+   
+  end
   --rectfill(schx,schy,schx+16,schy+16,8)
  end
  camera()
@@ -135,15 +158,17 @@ function draw_map()
   local ens=spwnlst(iscr)
   
   if i==10 or iscr%5==0 then
-   print(" "..tostrn(iscr,4).."-",0,i*6,7)
+   print(" "..tostrn(iscr,4),0,i*6,7)
+   print("-",21,i*6,7)
   end
 
   if #ens>0 then
    local s=""
-   for i=1,#ens do
-    s=s..tostrn(ens[i][2],2,"0").." "
+   local uix=26
+   for j=1,#ens do
+    print(tostrn(ens[j][2],2,"0"),uix,i*6,7)
+    uix+=10
    end
-   print("       "..s,0,i*6,7)  
   end
   
   
@@ -227,7 +252,7 @@ function update_map()
  scroll+=mscroll*8
  
  xscroll=mid(0,(mousex-10)/108,1)\-0.0625
- 
+ cury=1
  if btnp(⬇️) then
   scroll-=1
   curx=2
@@ -249,15 +274,29 @@ function update_map()
  end
  curx=mid(2,curx,#menu[cury])
  
- if clkl then
-  local sch={}
-  sch[1]=scroll-mousey-8
-  sch[2]=1
-  sch[3]=mousex-xscroll
-  sch[4]=-8
-  add(sched,sch)
+ if btnp(❎) then
+  dobutton(menu[cury][curx])
  end
  
+ -- mouse button control
+ for my=1,#menu do
+  for mx=1,#menu[my] do
+	  if mousecol(menu[my][mx]) then
+	   curx=mx
+	   cury=my
+	   if clkl then
+	    dobutton(menu[cury][curx])
+	   end
+	  end
+  end
+ end
+ 
+ if menu[cury][curx].cmdsch then
+  selsched=menu[cury][curx].cmdsch
+ else
+  selsched=nil
+ end
+
  if key=="t" then
   _drw=draw_table
   _upd=update_table
@@ -466,6 +505,18 @@ function spwnlst(scr)
  end
  return ret
 end
+
+function mousecol(b)
+ local wid=#b.w*4-1
+ 
+ if mousex<b.x-1 then return false end
+ if mousey<b.y-1 then return false end
+ if mousex>b.x+wid then return false end
+ if mousey>b.y+5 then return false end
+ 
+ 
+ return true
+end
 -->8
 --i/o
 function export()
@@ -505,7 +556,7 @@ function refresh_map()
 	 c=6
  })
  
- local uix=28
+ local uix=26
  
  local ens=spwnlst(scroll)
  if #ens>0 then
@@ -513,7 +564,8 @@ function refresh_map()
 		 add(lne,{
 			 txt=tostrn(ens[i][2],2,"0"),
 			 w="  ",
-			 cmd="",
+			 cmd="editen",
+			 cmdsch=ens[i],
 			 x=uix,
 			 y=60,
 			 c=13
@@ -525,7 +577,7 @@ function refresh_map()
  add(lne,{
 	 txt="+",
 	 w=" ",
-	 cmd="",
+	 cmd="adden",
 	 x=uix,
 	 y=60,
 	 c=13
@@ -581,6 +633,20 @@ function refresh_table()
   x=4,
   y=-4+8*(#data+1), 
  }})
+end
+
+function dobutton(b)
+ if b.cmd=="adden" then
+	 local sch={}
+	 sch[1]=scroll 
+	 sch[2]=1
+	 sch[3]=64
+	 sch[4]=8
+	 add(sched,sch)
+	elseif b.cmd=="editen" then
+	 del(sched,b.cmdsch)
+ end
+
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
