@@ -1,10 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
-
 --todo
--- -sanitize cmd input
--- -creating new brains
+-- - meta brain data
+-- - more commands
 
 function _init()
  --- customize here ---
@@ -12,6 +11,9 @@ function _init()
  file="shmup_brains.txt"
  arrname="brains"
  data=brains
+ #include shmup_myspr.txt
+ #include shmup_enlib.txt
+ #include shmup_anilib.txt
  ----------------------
  
  debug={}
@@ -30,6 +32,13 @@ function _init()
  scrollx=0
  
  selbrain=1
+ 
+ cmdlist={
+  "hed",
+  "wai"
+ }
+ 
+ enemies={}
  
  poke(0x5f2d, 1)
 end
@@ -76,6 +85,12 @@ end
 
 function draw_brain()
  cls(13)
+ 
+ for e in all(enemies) do
+  drawobj(e)
+ end
+ 
+ 
  drawmenu()
 
 end
@@ -136,6 +151,10 @@ end
 
 function update_brain()
  refresh_brain()
+ 
+ if #enemies==0 then
+  spawnen(1,64,64)
+ end
 
  if btnp(⬆️) then
   cury-=1
@@ -148,11 +167,13 @@ function update_brain()
  if cury==1 then
 	 if btnp(⬅️) then
 	  selbrain-=1
+	  enemies={}
 	 end
 	 if btnp(➡️) then
 	  selbrain+=1
+	  enemies={}
 	 end
-	 selbrain=mid(1,selbrain,#data)
+	 selbrain=mid(1,selbrain,#data+1)
  else
 	 if btnp(⬅️) then
 	  curx-=1
@@ -175,10 +196,16 @@ function update_brain()
    add(data[mymnu.cmdb],"0")
    add(data[mymnu.cmdb],"0")   
   elseif mymnu.cmd=="setup" then
-
-  end  
+  
+  elseif mymnu.cmd=="newbrain" then
+   add(data,{
+    "wai",0,0
+   })
+  end
+  return 
  end
  
+ doenemies()
 end
 
 function update_table()
@@ -298,6 +325,40 @@ function spacejam(n)
  end
  return ret
 end
+
+function mspr(si,sx,sy)
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ if _fx==2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ end
+ 
+ if _nx then
+  mspr(_nx,sx,sy)
+ end
+end
+
+function cyc(age,arr,anis)
+ local anis=anis or 1
+ return arr[(age\anis-1)%#arr+1]
+end
+
+function drawobj(obj)
+ mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
+ 
+ --★
+ if coldebug and obj.col then
+  msprc(obj.col,obj.x,obj.y)
+ end
+end
+
+function onscreen(obj)
+ if obj.x<-8 then return false end
+ if obj.y<-8 then return false end
+ if obj.x>136 then return false end
+ if obj.y>136 then return false end 
+ return true
+end
 -->8
 --i/o
 function export()
@@ -325,6 +386,19 @@ end
 
 function refresh_brain()
  menu={}
+ if selbrain>#data then
+  --empty brain slot
+  add(menu,{{
+	  txt="< new brain ",
+	  w="           ",
+	  cmd="newbrain",
+	  x=3,
+	  y=3,
+	  c=13  
+  }}) 
+  return
+ end
+ 
  add(menu,{{
 	 txt="< brain "..selbrain.." >",
 	 w="            ",
@@ -460,13 +534,29 @@ function enter_brain()
 
  local mymnu=menu[cury][curx]
  local typeval=typetxt
+ enemies={}
  if mymnu.cmdi%3==1 then
   --editing command entry
   if typeval=="" then
    deli(data[mymnu.cmdb],mymnu.cmdi)
    deli(data[mymnu.cmdb],mymnu.cmdi)
    deli(data[mymnu.cmdb],mymnu.cmdi)
+   if #data[mymnu.cmdb]==0 then
+    deli(data,mymnu.cmdb)
+    add(msg,{txt="brain deleted!",t=120})
+   end
+   
    return
+  else 
+   local found=false 
+   for c in all(cmdlist) do
+    if typeval==c then
+     found=true
+    end 
+   end
+   if not found then
+    typeval="wai"
+   end
   end
  else
   --editing parameters
@@ -474,10 +564,80 @@ function enter_brain()
   if typeval==nil then
    typeval=0
   end
-  typeval=tostr(typeval)
  end
  data[mymnu.cmdb][mymnu.cmdi]=typeval
 
+end
+-->8
+--enemy
+
+function dobrain(e)
+ local mybra=brains[e.brain]
+ local quit=false
+ if e.bri<#mybra then
+  local cmd=mybra[e.bri]
+  local par1=mybra[e.bri+1]
+  local par2=mybra[e.bri+2]
+  if cmd=="hed" then
+   --set heading / speed
+   e.ang=par1
+   e.spd=par2	    
+  elseif cmd=="wai" then
+   --wait x frames
+   e.wait=par1
+   quit=true
+  end
+  e.bri+=3
+  if quit then return end
+  dobrain(e)
+ end
+end
+
+function doenemies()
+ for e in all(enemies) do
+  if e.wait>0 then
+   e.wait-=1
+  else
+   dobrain(e)
+  end
+    
+  e.sx=sin(e.ang)*e.spd
+  e.sy=cos(e.ang)*e.spd
+  
+  e.x+=e.sx
+  e.y+=e.sy
+  
+  e.age+=1
+  
+  if not onscreen(e) then
+   del(enemies,e)
+  end
+ end
+ 
+
+end
+
+function spawnen(eni,enx,eny)
+ local en=enlib[eni]
+ 
+ add(enemies,{
+  x=enx,
+  y=eny,
+  ani=anilib[en[1]],
+  anis=en[2],
+  sx=0,
+  sy=0,
+  ang=0,
+  spd=0,
+  brain=selbrain,
+  bri=1,
+  age=0,
+  flash=0,
+  hp=en[4],
+  col=en[5],
+  wait=0
+ })
+	
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
