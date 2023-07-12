@@ -105,7 +105,7 @@ function domouse()
    clkl=true
    clkwait=true
   elseif stat(34)==2 then
-   clkl=true
+   clkr=true
    clkwait=true  
   end
  end
@@ -113,6 +113,16 @@ function domouse()
 end
 -->8
 --draw
+
+function draw_move()
+ drawbg()
+
+ bgprint("x:"..selsched[3].." y:"..selsched[4].." scroll:"..selsched[1],20,120,13)
+ drawmenu()
+ 
+ drawcur(mousex,mousey)
+end
+
 
 function draw_drop()
  drawbg()
@@ -231,14 +241,14 @@ function drawbg()
  if selsched then
    local col=11+16*12
    fillp(flr(▥))
-   line(0,selsched[4],127,selsched[4],col)
+   line(0,selsched[4],256,selsched[4],col)
    fillp(flr(▤))
-   line(selsched[3],0,selsched[3],127,col)
+   line(selsched[3],0,selsched[3],256,col)
    
-   line(selsched[3],selsched[4],selsched[3]-128,selsched[4]+128,col)
-   line(selsched[3],selsched[4],selsched[3]+128,selsched[4]+128,col)
-   line(selsched[3],selsched[4],selsched[3]-128,selsched[4]-128,col)
-   line(selsched[3],selsched[4],selsched[3]+128,selsched[4]-128,col)
+   line(selsched[3],selsched[4],selsched[3]-256,selsched[4]+256,col)
+   line(selsched[3],selsched[4],selsched[3]+256,selsched[4]+256,col)
+   line(selsched[3],selsched[4],selsched[3]-256,selsched[4]-256,col)
+   line(selsched[3],selsched[4],selsched[3]+256,selsched[4]-256,col)
    fillp()  
  end
  
@@ -254,9 +264,54 @@ end
 -->8
 --update
 
+function update_move()
+ refresh_move()
+ xscroll=mid(0,(mousex-10)/108,1)\-0.0625
+ 
+ if btnp(⬆️) then
+  selsched[4]-=1
+ end
+ if btnp(⬇️) then
+  selsched[4]+=1
+ end
+ if btnp(⬅️) then
+  selsched[3]-=1
+ end
+ if btnp(➡️) then
+  selsched[3]+=1
+ end
+ 
+ if key=="w" then
+  selsched[1]+=1
+ end
+ if key=="s" then
+  selsched[1]-=1
+ end
+ 
+ 
+ if clkl then
+  selsched[3]=mousex-xscroll
+  selsched[4]=mousey
+ end
+ 
+ if btnp(🅾️) or btnp(❎) or clkr then
+  _drw=draw_map
+  _upd=update_map
+  refresh_map() 
+  return 
+ end
+end
+
 function update_drop()
  refresh_drop()
 
+ if btnp(🅾️) or clkr then
+  _drw=draw_map
+  _upd=update_map
+  refresh_map() 
+  return
+ end
+ 
  if btnp(⬆️) then
   cury-=1
  end
@@ -264,15 +319,26 @@ function update_drop()
   cury+=1
  end
  cury=mid(1,cury,#menu)
+ curx=1
  
- if btnp(⬅️) then
-  curx-=1
+ if menu[cury][curx].cmd=="entype" then
+  local sched=menu[cury][curx].cmdsch
+  if btnp(⬅️) then
+   sched[2]-=1
+  end
+  if btnp(➡️) then
+   sched[2]+=1
+  end
+  sched[2]=mid(1,sched[2],#enlib)
+ else
+	 if btnp(❎) then
+	  dobutton(menu[cury][curx])
+	  return
+	 end  
  end
- if btnp(➡️) then
-  curx+=1
- end
- curx=mid(1,curx,#menu[cury])
  
+
+  
  -- mouse button control
  local mousehit=false
  if mousemove or clkl then
@@ -281,13 +347,22 @@ function update_drop()
 		  if mousecol(menu[my][mx]) then
 		   curx=mx
 		   cury=my
+		   mousehit=true
 		   if clkl then
 		    dobutton(menu[cury][curx])
+		    return
 		   end
 		  end
 	  end
 	 end	 
- end 
+	 if not mousehit and clkl then
+	  _drw=draw_map
+	  _upd=update_map
+	  refresh_map() 
+	  return
+	 end
+ end
+
 end
 
 function update_map()
@@ -629,12 +704,17 @@ end
 -->8
 --ui
 
+function refresh_move()
+ menu={}
+end
+
 function refresh_drop()
  menu={}
  add(menu,{{
-	 txt="type",
+	 txt="< "..tostrn(selsched[2],2,"0").." >",
 	 w="      ",
-	 cmd="",
+	 cmd="entype",
+	 cmdsch=selsched,
 	 x=dropx,
 	 y=dropy,
 	 c=13
@@ -642,7 +722,8 @@ function refresh_drop()
  add(menu,{{
 	 txt="move",
 	 w="      ",
-	 cmd="",
+	 cmd="moveen",
+	 cmdsch=selsched,
 	 x=dropx,
 	 y=dropy+6,
 	 c=13
@@ -650,15 +731,18 @@ function refresh_drop()
  add(menu,{{
 	 txt="copy",
 	 w="      ",
-	 cmd="",
+	 cmd="copyen",
+	 cmdsch=selsched,
 	 x=dropx,
 	 y=dropy+12,
 	 c=13
  }}) 
+ 
  add(menu,{{
 	 txt="delete",
 	 w="      ",
-	 cmd="",
+	 cmd="delen",
+	 cmdsch=selsched,
 	 x=dropx,
 	 y=dropy+18,
 	 c=13
@@ -700,6 +784,7 @@ function refresh_map()
 	 txt="+",
 	 w=" ",
 	 cmd="adden",
+	 
 	 x=uix,
 	 y=60,
 	 c=13
@@ -796,8 +881,38 @@ function dobutton(b)
   refresh_drop()
   _drw=draw_drop
   _upd=update_drop 
+ elseif b.cmd=="entype" then
+  local cx=mousex-dropx
+  local sched=b.cmdsch
+  if cx<=12 then
+   sched[2]-=1
+  else
+   sched[2]+=1
+  end
+  sched[2]=mid(1,sched[2],#enlib)
+ elseif b.cmd=="delen" then
+  del(sched,b.cmdsch)
+  _drw=draw_map
+  _upd=update_map
+  refresh_map() 
+ elseif b.cmd=="copyen" then
+  local newsched={
+   b.cmdsch[1],
+   b.cmdsch[2],
+   b.cmdsch[3],
+   b.cmdsch[4]
+  }
+  add(sched,newsched)
+  selsched=newsched
+  
+  _drw=draw_move
+  _upd=update_move
+  refresh_move()  
+ elseif b.cmd=="moveen" then
+  _drw=draw_move
+  _upd=update_move
+  refresh_move() 
  end
-
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
