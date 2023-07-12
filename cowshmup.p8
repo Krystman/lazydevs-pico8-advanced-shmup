@@ -29,6 +29,7 @@ function _init()
  #include shmup_enlib.txt
  #include shmup_sched.txt
  #include shmup_mapsegs.txt
+ #include shmup_brains.txt
  
  butarr=split "1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1"
  dirx=split "0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7"
@@ -445,20 +446,27 @@ function spawnen(eni,enx,eny)
   anis=en[2],
   sx=0,
   sy=0,
-  ang=0.1,
-  spd=0.2,
-  brain=en[3],
+  ang=0,
+  spd=0,
+  brain=1,--en[3],
+  bri=1,
   age=0,
   flash=0,
   hp=en[4],
-  col=en[5]
+  col=en[5],
+  wait=0
  })
 	
 end
 
 function doenemies()
  for e in all(enemies) do
-  
+  if e.wait>0 then
+   e.wait-=1
+  else
+   dobrain(e)
+  end
+    
   e.sx=sin(e.ang)*e.spd
   e.sy=cos(e.ang)*e.spd
   
@@ -466,6 +474,28 @@ function doenemies()
   e.y+=e.sy
   
   e.age+=1
+ end
+end
+
+function dobrain(e)
+ local mybra=brains[e.brain]
+ local quit=false
+ if e.bri<#mybra then
+  local cmd=mybra[e.bri]
+  local par1=mybra[e.bri+1]
+  local par2=mybra[e.bri+2]
+  if cmd=="hed" then
+   --set heading / speed
+   e.ang=par1
+   e.spd=par2	    
+  elseif cmd=="wai" then
+   --wait x frames
+   e.wait=par1
+   quit=true
+  end
+  e.bri+=3
+  if quit then return end
+  dobrain(e)
  end
 end
 
