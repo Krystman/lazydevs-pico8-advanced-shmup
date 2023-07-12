@@ -33,12 +33,13 @@ function _init()
  scrolly=0
  scrollx=0
  
+ enemies={}
+ 
  scroll=0
  xscroll=0
  poke(0x5f2d, 1)
  
  selsched=nil
- 
  t=0
 end
 
@@ -83,8 +84,16 @@ function dokeys()
 end
 
 function domouse()
+ local oldmousex=mousex
+ local oldmousey=mousey
+ 
  mousex=stat(32)
  mousey=stat(33)
+ 
+ mousemove=false
+ if mousex!=oldmousex or oldmousey!=mousey then
+  mousemove=true
+ end
  
  if stat(34)==0 then
   clkwait=false
@@ -105,54 +114,17 @@ end
 -->8
 --draw
 
-function draw_map()
- cls(2)
- for i=1,#mapsegs do
-  local segnum=mapsegs[i]
-  local sx=segnum\4*18
-  local sy=segnum%4*8
-  map(sx,sy,xscroll,scroll-((i-2)*64),18,8)
- end
- 
- 
- 
- camera(-xscroll,0)
- for sch in all(sched) do
-  local schx=sch[3]
-  local schy=sch[4]+scroll-sch[1]
-  
-  local en=enlib[sch[2]]
-  local ani=anilib[en[1]]
+function draw_drop()
+ drawbg()
 
-  if sch==selsched then
-   local col=11+16*12
-   fillp(flr(▥))
-   line(0,sch[4],127,sch[4],col)
-   fillp(flr(▤))
-   line(sch[3],0,sch[3],127,col)
-   
-   line(sch[3],sch[4],sch[3]-128,sch[4]+128,col)
-   line(sch[3],sch[4],sch[3]+128,sch[4]+128,col)
-   line(sch[3],sch[4],sch[3]-128,sch[4]-128,col)
-   line(sch[3],sch[4],sch[3]+128,sch[4]-128,col)
-   fillp() 
-  end
-    
-  mspr(cyc(t,ani,en[2]),schx,schy)
-  
-  if sch==selsched then
-   local col=rnd({6,7})
-   rect(schx-8,schy-8,schx+9,schy+9,col)
-   
-   
-   
-  end
-  --rectfill(schx,schy,schx+16,schy+16,8)
- end
- camera()
+ drawmenu()
+ drawcur(mousex,mousey)
+end
+
+function draw_map()
+ drawbg()
  
  -- timeline
- 
  for i=0,21 do
   local iscr=scroll+(20-i)-10
   local ens=spwnlst(iscr)
@@ -170,7 +142,6 @@ function draw_map()
     uix+=10
    end
   end
-  
   
   if iscr<0 then
    break
@@ -241,10 +212,83 @@ function drawcur(cx,cy)
  line(cx,cy+1,cx,cy+2,col)
  line(cx-1,cy,cx-2,cy,col)
  line(cx+1,cy,cx+2,cy,col)
+end
+
+function drawbg()
+ cls(2)
+ for i=1,#mapsegs do
+  local segnum=mapsegs[i]
+  local sx=segnum\4*18
+  local sy=segnum%4*8
+  map(sx,sy,xscroll,scroll-((i-2)*64),18,8)
+ end
  
+ camera(-xscroll,0)
+ genens()
+ 
+ -- draw enemies
+ 
+ if selsched then
+   local col=11+16*12
+   fillp(flr(▥))
+   line(0,selsched[4],127,selsched[4],col)
+   fillp(flr(▤))
+   line(selsched[3],0,selsched[3],127,col)
+   
+   line(selsched[3],selsched[4],selsched[3]-128,selsched[4]+128,col)
+   line(selsched[3],selsched[4],selsched[3]+128,selsched[4]+128,col)
+   line(selsched[3],selsched[4],selsched[3]-128,selsched[4]-128,col)
+   line(selsched[3],selsched[4],selsched[3]+128,selsched[4]-128,col)
+   fillp()  
+ end
+ 
+ for en in all(enemies) do
+  mspr(en.s,en.x,en.y)
+  if en.sched==selsched then
+   rect(en.x-8,en.y-8,en.x+9,en.y+9,rnd({6,7}))
+  end
+ end
+ 
+ camera()
 end
 -->8
 --update
+
+function update_drop()
+ refresh_drop()
+
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=mid(1,cury,#menu)
+ 
+ if btnp(⬅️) then
+  curx-=1
+ end
+ if btnp(➡️) then
+  curx+=1
+ end
+ curx=mid(1,curx,#menu[cury])
+ 
+ -- mouse button control
+ local mousehit=false
+ if mousemove or clkl then
+	 for my=1,#menu do
+	  for mx=1,#menu[my] do
+		  if mousecol(menu[my][mx]) then
+		   curx=mx
+		   cury=my
+		   if clkl then
+		    dobutton(menu[cury][curx])
+		   end
+		  end
+	  end
+	 end	 
+ end 
+end
 
 function update_map()
  refresh_map()
@@ -276,26 +320,46 @@ function update_map()
  
  if btnp(❎) then
   dobutton(menu[cury][curx])
+  return
  end
+ 
+ selsched=menu[cury][curx].cmdsch
  
  -- mouse button control
- for my=1,#menu do
-  for mx=1,#menu[my] do
-	  if mousecol(menu[my][mx]) then
-	   curx=mx
-	   cury=my
-	   if clkl then
-	    dobutton(menu[cury][curx])
-	   end
+ local mousehit=false
+ if mousemove or clkl then
+	 for my=1,#menu do
+	  for mx=1,#menu[my] do
+		  if mousecol(menu[my][mx]) then
+		   curx=mx
+		   cury=my
+ 		  selsched=menu[cury][curx].cmdsch
+		   mousehit=true
+		   if clkl then
+		    dobutton(menu[cury][curx])
+		    return
+		   end
+		  end
 	  end
+	 end	 
+ end
+ if not mousehit then
+  for en in all(enemies) do
+   if col3(en) then
+    selsched=en.sched
+    mousehit=true
+    if clkl then
+     dropx=en.x+xscroll
+     dropy=en.y
+     
+     refresh_drop()
+     _drw=draw_drop
+     _upd=update_drop     
+    end
+   end
   end
  end
- 
- if menu[cury][curx].cmdsch then
-  selsched=menu[cury][curx].cmdsch
- else
-  selsched=nil
- end
+
 
  if key=="t" then
   _drw=draw_table
@@ -517,6 +581,27 @@ function mousecol(b)
  
  return true
 end
+
+function col3(ob)
+ local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(myspr[ob.col])
+ 
+ local a_left=mousex-xscroll
+ local a_top=mousey
+ local a_right=mousex-xscroll
+ local a_bottom=mousey
+ 
+ local b_left=flr(ob.x)-_box
+ local b_top=flr(ob.y)-_boy
+ local b_right=b_left+_bw-1
+ local b_bottom=b_top+_bh-1
+
+ if a_top>b_bottom then return false end
+ if b_top>a_bottom then return false end
+ if a_left>b_right then return false end
+ if b_left>a_right then return false end
+ 
+ return true
+end
 -->8
 --i/o
 function export()
@@ -543,6 +628,43 @@ function export()
 end
 -->8
 --ui
+
+function refresh_drop()
+ menu={}
+ add(menu,{{
+	 txt="type",
+	 w="      ",
+	 cmd="",
+	 x=dropx,
+	 y=dropy,
+	 c=13
+ }})
+ add(menu,{{
+	 txt="move",
+	 w="      ",
+	 cmd="",
+	 x=dropx,
+	 y=dropy+6,
+	 c=13
+ }})
+ add(menu,{{
+	 txt="copy",
+	 w="      ",
+	 cmd="",
+	 x=dropx,
+	 y=dropy+12,
+	 c=13
+ }}) 
+ add(menu,{{
+	 txt="delete",
+	 w="      ",
+	 cmd="",
+	 x=dropx,
+	 y=dropy+18,
+	 c=13
+ }}) 
+
+end
 
 function refresh_map()
  menu={}
@@ -584,6 +706,26 @@ function refresh_map()
  })
  
  add(menu,lne)
+end
+
+function genens()
+ enemies={}
+ for sch in all(sched) do
+  local schx=sch[3]
+  local schy=sch[4]+scroll-sch[1]
+  
+  local en=enlib[sch[2] ]
+  local ani=anilib[en[1] ]
+  
+  add(enemies,{
+   x=schx,
+   y=schy,
+   s=cyc(t,ani,en[2]),
+   sched=sch,
+   col=en[5]
+  })
+  
+ end
 end
 
 function refresh_table()
@@ -643,8 +785,17 @@ function dobutton(b)
 	 sch[3]=64
 	 sch[4]=8
 	 add(sched,sch)
-	elseif b.cmd=="editen" then
-	 del(sched,b.cmdsch)
+ elseif b.cmd=="editen" then
+  
+  --dropx=mid(2,b.cmdsch[3],128-25)
+  --dropy=mid(2,b.cmdsch[4],128-30)
+  
+  dropx=b.x
+  dropy=b.y
+  
+  refresh_drop()
+  _drw=draw_drop
+  _upd=update_drop 
  end
 
 end
