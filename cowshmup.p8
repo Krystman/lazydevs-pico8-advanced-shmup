@@ -3,8 +3,12 @@ version 41
 __lua__
 
 -- goals
--- - schedule/spawn system
 -- - enemy brain system
+-- - - brain database
+-- - - interpreter
+-- - - what commands?
+-- - - delete old enemies
+
 -- - bullet pattern system
 
 -- smol things
@@ -153,20 +157,17 @@ function drw_game()
   end
  end
  
- 
  --ship
  if inviz<=0 then
 	 if invul<=0 or (time()*9)%1<0.5 then
-	  camera()
 	  if freeze>0 then
 	   pal(pal_wflash)
 	  end
 		 drawobj(pspr) 
 		 local fframe=anilib[1][t\3%4+1]
-		 mspr(fframe,px-1,py+8)
-		 mspr(fframe,px+2,py+8)
+		 mspr(fframe,pspr.x-1,py+8)
+		 mspr(fframe,pspr.x+2,py+8)
 		 pal()
-	  camera(-xscroll,0)
 	 end
  else
   inviz-=1
@@ -222,7 +223,7 @@ function upd_game()
  
  --spawning
  if schedi<=#sched and sched[schedi][1]<scroll then
-  spawnen(sched[schedi][2],sched[schedi][3],sched[schedi][4])
+  spawnen(unpack(sched[schedi],2))
   schedi+=1
  end
  
@@ -243,14 +244,15 @@ function upd_game()
  shipspr=mid(-1,shipspr,1)
  
  lastdir=dir
+
+ xscroll=mid(0,(px-10)/108,1)\-0.0625
  
- pspr.x=flr(px)
+ pspr.x=flr(px)-xscroll
  pspr.y=flr(py)
  pspr.ani[1]=flr(shipspr*2.4+3.5)
  
  --xscroll=mid(0,(px-10)/100,1)*-16
  --2441
- xscroll=mid(0,(px-10)/108,1)\-0.0625
  
  if shotwait>0 then
   shotwait-=1
@@ -302,13 +304,13 @@ function upd_game()
  -- ship vs enemies
  if invul<=0 then
 	 for e in all(enemies) do
-	  if col2(pspr,e,true) then
+	  if col2(pspr,e) then
 	   die()
 	  end
 	 end
 	 
 	 for b in all(buls) do
-	  if col2(pspr,b,true) then
+	  if col2(pspr,b) then
 	   die()
 	  end
 	 end
@@ -365,11 +367,11 @@ function split2d(s)
  return arr
 end
 
-function col2(oa,ob,xscr)
+function col2(oa,ob)
  local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(myspr[oa.col])
  local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(myspr[ob.col])
  
- local a_left=flr(oa.x)-_aox-(xscr and xscroll or 0)
+ local a_left=flr(oa.x)-_aox
  local a_top=flr(oa.y)-_aoy
  local a_right=a_left+_aw-1
  local a_bottom=a_top+_ah-1
@@ -430,7 +432,7 @@ end
 function die2()
  explode(px-xscroll,py)
  inviz=30
- invul=120
+ invul=150
 end
 
 function spawnen(eni,enx,eny)
@@ -439,64 +441,26 @@ function spawnen(eni,enx,eny)
  add(enemies,{
   x=enx,
   y=eny,
- 
-  --x=10+rnd(128),
-  --y=16-rnd(32),
-
   ani=anilib[en[1]],
   anis=en[2],
   sx=0,
   sy=0,
+  ang=0.1,
+  spd=0.2,
   brain=en[3],
   age=0,
   flash=0,
   hp=en[4],
   col=en[5]
  })
-
- --[[add(buls,{
-		x=90,
-		y=64,
-		sx=0,
-		sy=0,
-		ani=anilib[6],
-		age=1,
-		col=1
-	})]]--
 	
 end
 
 function doenemies()
  for e in all(enemies) do
   
-  if e.brain==1 then
-   -- flyin and out brain
-   if e.age<15 then
-    -- fly down
-    e.sy=2
-   elseif e.age<120 then
-    if e.age==60 then
-     add(buls,{
-  				x=e.x,
-  				y=e.y,
-  				sx=0,
-  				sy=2,
-  				ani={22},
-  				age=1,
-  				col=22
- 				})
-    end
-    -- stay
-    e.sy=max(0,e.sy-0.03)
-    --e.sy=0
-   else
-    -- fly up
-    e.sy-=0.04
-    if e.y < -16 then
-     del(enemies,e)
-    end
-   end
-  end
+  e.sx=sin(e.ang)*e.spd
+  e.sy=cos(e.ang)*e.spd
   
   e.x+=e.sx
   e.y+=e.sy
@@ -525,7 +489,7 @@ function shoot()
  shotwait=2
  
  add(shots,{
-  x=px-4-xscroll,
+  x=pspr.x-4,
   y=py-14,
   sx=0,
   sy=shotspd,
@@ -535,7 +499,7 @@ function shoot()
   col=29
  })
  add(shots,{
-  x=px+4-xscroll,
+  x=pspr.x+4,
   y=py-14,
   sx=0,
   sy=shotspd,
