@@ -128,6 +128,31 @@ function draw_map()
  end
  camera()
  
+ -- timeline
+ 
+ for i=0,21 do
+  local iscr=scroll+(20-i)-10
+  local ens=spwnlst(iscr)
+  
+  if i==10 or iscr%5==0 then
+   print(" "..tostrn(iscr,4).."-",0,i*6,7)
+  end
+
+  if #ens>0 then
+   local s=""
+   for i=1,#ens do
+    s=s..tostrn(ens[i][2],2,"0").." "
+   end
+   print("       "..s,0,i*6,7)  
+  end
+  
+  
+  if iscr<0 then
+   break
+  end
+ end
+ 
+ drawmenu()
  drawcur(mousex,mousey)
  
  --debug[1]=scroll
@@ -138,23 +163,7 @@ function draw_table()
  cls(2)
  --spr(0,0,0,16,16)
  
-	if menu then
-		for i=1,#menu do
-		 for j=1,#menu[i] do
-		  local mymnu=menu[i][j]
-		  local c=mymnu.c or 13
-		  if i==cury and j==curx then
-		   c=7
-		   if _upd==upd_type then
-		    c=0
-		   end
-		  end
-		  
-		  bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y+scrolly,13)   
-		  bgprint(mymnu.txt,mymnu.x+scrollx,mymnu.y+scrolly,c) 
-		 end
-		end
- end
+ drawmenu()
  
  if _upd==upd_type then
   local mymnu=menu[cury][curx]
@@ -181,6 +190,26 @@ function draw_table()
  ]]
 end
 
+function drawmenu()
+	if menu then
+		for i=1,#menu do
+		 for j=1,#menu[i] do
+		  local mymnu=menu[i][j]
+		  local c=mymnu.c or 13
+		  if i==cury and j==curx then
+		   c=7
+		   if _upd==upd_type then
+		    c=0
+		   end
+		  end
+		  
+		  bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y+scrolly,13)   
+		  bgprint(mymnu.txt,mymnu.x+scrollx,mymnu.y+scrolly,c) 
+		 end
+		end
+ end
+end
+
 function drawcur(cx,cy)
  local col=rnd({6,7})
  line(cx,cy-1,cx,cy-2,col)
@@ -201,11 +230,24 @@ function update_map()
  
  if btnp(⬇️) then
   scroll-=1
+  curx=2
  end
   
  if btnp(⬆️) then
   scroll+=1 
+  curx=2
  end
+ 
+ scroll=max(0,scroll)
+ 
+ if btnp(⬅️) then
+  curx-=1
+ end
+  
+ if btnp(➡️) then
+  curx+=1
+ end
+ curx=mid(2,curx,#menu[cury])
  
  if clkl then
   local sch={}
@@ -218,8 +260,11 @@ function update_map()
  
  if key=="t" then
   _drw=draw_table
-  _upd=update_table 
+  _upd=update_table
+  refresh_table()
+  return
  end
+ 
 end
 
 function update_table()
@@ -227,7 +272,9 @@ function update_table()
  
  if key=="m" then
   _drw=draw_map
-  _upd=update_map 
+  _upd=update_map
+  refresh_map()
+  return
  end
  
  if btnp(⬆️) then
@@ -397,6 +444,28 @@ function sortsched()
  until switch==false
 
 end
+
+function tostrn(v,l,ch)
+ local ch=ch or " "
+ local sv=tostr(v)
+ if #sv<l then
+  local diff=l-#sv
+  for i=1,diff do
+   sv=ch..sv
+  end  
+ end
+ return sv
+end
+
+function spwnlst(scr)
+ local ret={}
+ for s in all(sched) do
+  if s[1]==scr then
+   add(ret,s)
+  end
+ end
+ return ret
+end
 -->8
 --i/o
 function export()
@@ -426,6 +495,43 @@ end
 
 function refresh_map()
  menu={}
+ local lne={}
+ add(lne,{
+	 txt=tostrn(scroll,4),
+	 w="    ",
+	 cmd="",
+	 x=4,
+	 y=60,
+	 c=6
+ })
+ 
+ local uix=28
+ 
+ local ens=spwnlst(scroll)
+ if #ens>0 then
+  for i=1,#ens do
+		 add(lne,{
+			 txt=tostrn(ens[i][2],2,"0"),
+			 w="  ",
+			 cmd="",
+			 x=uix,
+			 y=60,
+			 c=13
+		 }) 
+		 uix+=10  
+  end 
+ end
+ 
+ add(lne,{
+	 txt="+",
+	 w=" ",
+	 cmd="",
+	 x=uix,
+	 y=60,
+	 c=13
+ })
+ 
+ add(menu,lne)
 end
 
 function refresh_table()
