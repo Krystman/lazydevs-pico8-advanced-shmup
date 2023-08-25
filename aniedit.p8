@@ -1,9 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---show cursor
---move the cursor
---backspace
+-- todo
+-- -animation preview
+-- -visual sprite selection
 
 function _init()
  --- customize here ---

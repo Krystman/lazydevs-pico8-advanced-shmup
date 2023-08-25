@@ -2,11 +2,20 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 --todo
--- - meta brain data
--- - -ui
--- - -create meta on brain create
--- - -delete meta on brain delete
--- - more commands
+-- animate speed
+
+-- goal
+-- (2 sideways attack)
+-- 3 turnaround
+-- 4 shoot on retreat
+-- 5 snek
+-- 6 bumrush
+-- 7 boss
+
+-- todo
+--- insert lines?
+--- better position control
+--- change brains?!
 
 function _init()
  --- customize here ---
@@ -40,8 +49,11 @@ function _init()
  
  cmdlist={
   "hed",
-  "wai"
+  "wai",
+  "asp"
  }
+ 
+ scroll=0
  
  enemies={}
  
@@ -70,7 +82,8 @@ end
 function _update60()
  dokeys()
  mscroll=stat(36)
- 
+ scroll+=0.2
+ scroll=scroll%16
  _upd()
 end
 
@@ -90,6 +103,20 @@ end
 
 function draw_brain()
  cls(13)
+ 
+ if flr(scroll)%2==0 then
+  fillp(0b0000111100001111.1)
+ else
+  fillp(0b1111000011110000.1)
+ end
+ for i=0,7 do
+  line(i*16,0,i*16,128,5)
+ end
+ fillp(▥)
+ for i=-1,7 do
+  line(0,i*16+scroll,128,i*16+scroll,5)
+ end
+ fillp()
  
  for e in all(enemies) do
   drawobj(e)
@@ -234,8 +261,8 @@ function update_brain()
    callback=enter_brain
   elseif mymnu.cmd=="newline" then
    add(data[mymnu.cmdb],"wai")
-   add(data[mymnu.cmdb],"0")
-   add(data[mymnu.cmdb],"0")   
+   add(data[mymnu.cmdb],0)
+   add(data[mymnu.cmdb],0)   
   elseif mymnu.cmd=="setup" then
    refresh_setup()
    _upd=update_setup
@@ -243,6 +270,9 @@ function update_brain()
   elseif mymnu.cmd=="newbrain" then
    add(data,{
     "wai",0,0
+   })
+   add(meta,{
+    1,64,10
    })
   end
   return 
@@ -647,6 +677,7 @@ function enter_brain()
    deli(data[mymnu.cmdb],mymnu.cmdi)
    if #data[mymnu.cmdb]==0 then
     deli(data,mymnu.cmdb)
+    deli(meta,mymnu.cmdb)
     add(msg,{txt="brain deleted!",t=120})
    end
    
@@ -704,6 +735,10 @@ function dobrain(e)
    --wait x frames
    e.wait=par1
    quit=true
+  elseif cmd=="asp" then
+   --animate speed
+   e.aspt=par1
+   e.asps=par2
   end
   e.bri+=3
   if quit then return end
@@ -718,7 +753,15 @@ function doenemies()
   else
    dobrain(e)
   end
-    
+  
+  if e.aspt then
+   e.spd+=e.asps
+   if abs(e.aspt-e.spd)<abs(e.asps) then
+    e.spd=e.aspt
+    e.aspt=nil
+   end
+  end
+  
   e.sx=sin(e.ang)*e.spd
   e.sy=cos(e.ang)*e.spd
   
