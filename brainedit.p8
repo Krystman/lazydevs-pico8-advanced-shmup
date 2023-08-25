@@ -4,10 +4,13 @@ __lua__
 --todo
 
 -- goal
--- 7 boss
+-------
 
 -- todo
--- loop
+-------
+-- autosave
+-- position goto
+-- how do i fire multiple bullets
 
 function _init()
  --- customize here ---
@@ -47,19 +50,21 @@ function _init()
   "fir",
   "adr",
   "clo",
-  "flw"
+  "flw",
+  "lop"
  }
  
  execy=0
  
  scroll=0
- 
+  
  enemies={}
  
  muzz={}
  
  overlay=false
  showtrails=false
+ showui=true
  
  newtrails={}
  curtrails={}
@@ -138,15 +143,20 @@ function draw_brain()
  for e in all(enemies) do
   drawobj(e)
   if overlay and e==protag then
-   local ox=sin(e.ang)
-   local oy=cos(e.ang)
+   local myang=e.ang
+   if e.spd<0 then
+    myang-=-0.5
+   end
+   local ox=sin(myang)
+   local oy=cos(myang)
    
    local ox1=e.x+ox*12
    local oy1=e.y+oy*12
+   
    pset(e.x,e.y,11)
    line(ox1,oy1,
-        ox1+ox*8*e.spd,
-        oy1+oy*8*e.spd,11)
+        ox1+ox*8*abs(e.spd),
+        oy1+oy*8*abs(e.spd),11)
   end
  end
  
@@ -167,8 +177,10 @@ function draw_brain()
   end
  end
  
- drawmenu()
- line(1,execy,1,execy+6,11)
+ if showui then
+  drawmenu()
+  line(1+scrollx,execy+scrolly,1+scrollx,execy+6+scrolly,11)
+ end
 end
 
 function draw_table()
@@ -216,8 +228,8 @@ function drawmenu()
 		    c=0
 		   end
 		  end 
-		  bgprint(mymnui.w,mymnui.x+scrollx,mymnui.y+scrolly,13)   
-		  bgprint(mymnui.txt,mymnui.x+scrollx,mymnui.y+scrolly,c) 
+		  bgprint(mymnui.w,mymnui.x,mymnui.y,13)   
+		  bgprint(mymnui.txt,mymnui.x,mymnui.y,c) 
 		 end
 		end
  end
@@ -243,6 +255,7 @@ end
 --update
 
 function update_setup()
+ scrolly=0
  refresh_setup()
  if btnp(⬆️) then
   cury-=1
@@ -274,6 +287,7 @@ function update_setup()
    local selmeta=meta[selbrain]
    
    if enlib[selmeta[1]]!=nil then
+    curtrails=newtrails
     reseten()
    end  
   end
@@ -295,6 +309,9 @@ function update_brain()
  end
  if key=="2" then
   showtrails= not showtrails
+ end
+ if key=="3" then
+  showui= not showui
  end
  
  if btnp(⬆️) then
@@ -327,6 +344,17 @@ function update_brain()
 	 curx=mid(1,curx,#menu[cury])
  end
  
+ ---scrolling
+ local mymnu=menu[cury][curx]
+ if mymnu.y+scrolly>100 then
+  scrolly-=4
+ end
+ if mymnu.y+scrolly<10 then
+  scrolly+=4
+ end
+ scrolly=min(0,scrolly)
+
+ --interaction
  if btnp(❎) then
   local mymnu=menu[cury][curx]
   if mymnu.cmd=="edit" then
@@ -358,6 +386,7 @@ function update_brain()
   if #enemies==0 then
    local selmeta=meta[selbrain]
    if enlib[selmeta[1]]!=nil then
+    curtrails=newtrails
     reseten()
    end
   end
@@ -874,6 +903,14 @@ function dobrain(e,depth)
    --goto
    e.brain=par1
    e.bri=par2-3
+  elseif cmd=="lop" then
+   --loop
+   e.loop=e.loop and e.loop+1 or 1
+   if e.loop<par1 then
+    e.bri=par2-3
+   else
+    e.loop=0
+   end
   elseif cmd=="fir" then
    --fire
    firebul(e,par1,par2)
@@ -948,10 +985,6 @@ function doenemies()
   
   if not onscreen(e) then
    del(enemies,e)
-   --★ code for editor
-   if e==protag then
-    curtrails=newtrails
-   end
   end
  end
 end
