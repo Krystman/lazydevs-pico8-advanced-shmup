@@ -4,13 +4,10 @@ __lua__
 --todo
 
 -- goal
--- 6 bumrush
 -- 7 boss
 
 -- todo
 -- loop
--- brain clone command?
--- trails
 
 function _init()
  --- customize here ---
@@ -49,7 +46,8 @@ function _init()
   "got",
   "fir",
   "adr",
-  "clo"
+  "clo",
+  "flw"
  }
  
  execy=0
@@ -61,8 +59,19 @@ function _init()
  muzz={}
  
  overlay=false
+ showtrails=false
+ 
+ newtrails={}
+ curtrails={}
+ 
+ pspr={
+  x=64,
+  y=110
+ }
  
  poke(0x5f2d, 1)
+ 
+ t=0
 end
 
 function _draw()
@@ -86,6 +95,7 @@ function _draw()
 end
 
 function _update60()
+ t+=1
  dokeys()
  mscroll=stat(36)
  scroll+=0.2
@@ -123,10 +133,11 @@ function draw_brain()
   line(0,i*16+scroll,128,i*16+scroll,5)
  end
  fillp()
+ circ(pspr.x,pspr.y,3,5)
  
  for e in all(enemies) do
   drawobj(e)
-  if overlay then
+  if overlay and e==protag then
    local ox=sin(e.ang)
    local oy=cos(e.ang)
    
@@ -147,6 +158,12 @@ function draw_brain()
   end
   if m.r<=0 then
    del(muzz,m)
+  end
+ end
+ 
+ if showtrails then
+  for t in all(curtrails) do
+   pset(t[1],t[2],11)
   end
  end
  
@@ -257,10 +274,10 @@ function update_setup()
    local selmeta=meta[selbrain]
    
    if enlib[selmeta[1]]!=nil then
-    spawnen(selmeta[1],selmeta[2],selmeta[3])
+    reseten()
    end  
   end
-  doenemies()
+  doenemies()  
  else
   enemies={}
  end
@@ -270,8 +287,14 @@ end
 function update_brain()
  refresh_brain()
  
+ pspr.x=stat(32)
+ pspr.y=stat(33)
+ 
  if key=="1" then
   overlay= not overlay
+ end
+ if key=="2" then
+  showtrails= not showtrails
  end
  
  if btnp(⬆️) then
@@ -286,10 +309,12 @@ function update_brain()
 	 if btnp(⬅️) then
 	  selbrain-=1
 	  enemies={}
+	  curtrails={}
 	 end
 	 if btnp(➡️) then
 	  selbrain+=1
 	  enemies={}
+	  curtrails={}
 	 end
 	 selbrain=mid(1,selbrain,#data+1)
  else
@@ -333,10 +358,14 @@ function update_brain()
   if #enemies==0 then
    local selmeta=meta[selbrain]
    if enlib[selmeta[1]]!=nil then
-    spawnen(selmeta[1],selmeta[2],selmeta[3])
+    reseten()
    end
   end
   doenemies()
+  if protag and t%5==0 then
+   add(newtrails,{protag.x,protag.y})
+  end
+
  else
   enemies={}
  end
@@ -826,6 +855,7 @@ function dobrain(e,depth)
    e.ang=par1
    e.spd=par2
    e.aspt=nil
+   e.flw=false
   elseif cmd=="wai" then
    --wait x frames
    e.wait=par1
@@ -839,6 +869,7 @@ function dobrain(e,depth)
    --animate direction
    e.adrt=par1
    e.adrs=par2
+   e.flw=false
   elseif cmd=="got" then
    --goto
    e.brain=par1
@@ -847,12 +878,18 @@ function dobrain(e,depth)
    --fire
    firebul(e,par1,par2)
   elseif cmd=="clo" then
+   --clone
    for i=1,par1 do
     local myclo=copylist(e)
     myclo.wait+=i*par2
     myclo.bri+=3
     add(enemies,myclo)
    end
+  elseif cmd=="flw" then
+   --follow
+   e.flw=true
+   e.flws=par1
+   --par2??
   else
    --★ extra robustness
    return
@@ -869,6 +906,20 @@ function doenemies()
    e.wait-=1
   elseif e.dist<=0 then
    dobrain(e)
+  end
+  
+  if e.flw then
+   local diff=atan2(pspr.y-e.y,pspr.x-e.x)-e.ang   
+   if abs(diff)>0.5 then
+    diff-=sgn(diff)
+   end
+   
+   e.ang+=mid(-e.flws,diff,e.flws)
+   
+   if dist(pspr.x,pspr.y,e.x,e.y)<25 then
+    e.flw=false
+   end
+   e.ang=e.ang%1
   end
   
   if e.aspt then
@@ -897,10 +948,21 @@ function doenemies()
   
   if not onscreen(e) then
    del(enemies,e)
+   --★ code for editor
+   if e==protag then
+    curtrails=newtrails
+   end
   end
  end
- 
+end
 
+function reseten()
+ t=0
+ enemies={}
+ local selmeta=meta[selbrain]
+ spawnen(selmeta[1],selmeta[2],selmeta[3])
+ protag=enemies[1]
+ newtrails={}
 end
 
 function spawnen(eni,enx,eny)
@@ -973,12 +1035,19 @@ function firebul(_en,par1,par2)
  })
 end
 
+--- tools 
+
 function copylist(org)
  local ret={}
  for k, v in pairs(org) do
   ret[k]=v
  end
  return ret
+end
+
+function dist(x1,y1,x2,y2)
+ local dx,dy=x2-x1,y2-y1
+ return sqrt(dx*dx+dy*dy)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
