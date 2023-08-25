@@ -1,1 +1,1 @@
-brains=split2d"hed,0,2,asp,0.35,-0.1,wai,80,0,asp,2,0.05|hed,0.25,2,asp,0.35,-0.1,wai,60,0,hed,0,0,asp,2,0.05"
+brains=split2d"hed,0,2,asp,0.35,-0.05,wai,0,48,hed,0,0.35,asp,2,0.05|hed,0.25,2,asp,0.35,-0.05,wai,0,48,got,1,10"

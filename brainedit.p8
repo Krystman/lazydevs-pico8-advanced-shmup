@@ -5,7 +5,6 @@ __lua__
 -- animate speed
 
 -- goal
--- (2 sideways attack)
 -- 3 turnaround
 -- 4 shoot on retreat
 -- 5 snek
@@ -13,8 +12,6 @@ __lua__
 -- 7 boss
 
 -- todo
---- insert lines?
---- better position control
 --- change brains?!
 
 function _init()
@@ -50,7 +47,8 @@ function _init()
  cmdlist={
   "hed",
   "wai",
-  "asp"
+  "asp",
+  "got"
  }
  
  scroll=0
@@ -77,6 +75,7 @@ function _draw()
  for txt in all(debug) do
   print(txt)
  end
+ 
 end
 
 function _update60()
@@ -155,6 +154,23 @@ function drawmenu()
 		  
 		  bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y+scrolly,13)   
 		  bgprint(mymnu.txt,mymnu.x+scrollx,mymnu.y+scrolly,c) 
+		 end
+		end
+ end
+ 
+	if menui then
+		for i=1,#menui do
+		 for j=1,#menui[i] do
+		  local mymnui=menui[i][j]
+		  local c=mymnui.c or 13
+		  if i==cury and j==curx then
+		   c=7
+		   if _upd==upd_type then
+		    c=0
+		   end
+		  end 
+		  bgprint(mymnui.w,mymnui.x+scrollx,mymnui.y+scrolly,13)   
+		  bgprint(mymnui.txt,mymnui.x+scrollx,mymnui.y+scrolly,c) 
 		 end
 		end
  end
@@ -260,9 +276,11 @@ function update_brain()
    typecur=#typetxt+1
    callback=enter_brain
   elseif mymnu.cmd=="newline" then
-   add(data[mymnu.cmdb],"wai")
-   add(data[mymnu.cmdb],0)
-   add(data[mymnu.cmdb],0)   
+   add(data[mymnu.cmdb],"wai",mymnu.cmdi)
+   add(data[mymnu.cmdb],0,mymnu.cmdi+1)
+   add(data[mymnu.cmdb],0,mymnu.cmdi+2)
+   cury+=1
+   curx=1
   elseif mymnu.cmd=="setup" then
    refresh_setup()
    _upd=update_setup
@@ -483,6 +501,7 @@ end
 
 function refresh_setup()
  menu={}
+ menui={}
  add(menu,{{
 	 txt="brain "..selbrain,
 	 w="        ",
@@ -520,6 +539,7 @@ end
 
 function refresh_brain()
  menu={}
+ menui={}
  if selbrain>#data then
   --empty brain slot
   add(menu,{{
@@ -579,24 +599,42 @@ function refresh_brain()
 	  })
 	  lx+=#mytxt*4+2
   end
+  
+  if cury==#menu+1 then
+		 add(lne,{
+			 txt="+",
+			 w=" ",
+			 cmd="newline",
+			 cmdi=i+3,
+			 cmdb=selbrain,
+			 x=lx,
+			 y=ly,
+			 c=13    
+		 })
+  end
+  
   add(menu,lne)
   ly+=8
  end
  
- add(menu,{{
-	 txt="+",
-	 w=" ",
-	 cmd="newline",
-	 cmdb=selbrain,
-	 x=3,
-	 y=ly,
-	 c=13    
- }})
- 
+ if menu[cury] then
+	 local mymnu=menu[cury][curx]
+	 if mymnu and mymnu.cmd=="edit" then
+		 add(menui,{{
+			 txt="i:"..mymnu.cmdi,
+			 w="    ",
+			 cmd="",
+			 x=3,
+			 y=120,
+			 c=15    
+		 }})
+	 end
+	end
 end
 
 function refresh_table()
  menu={}
+ menui={}
  for i=1,#data do
   local lne={}
   local linemax=#data[i]
@@ -721,6 +759,9 @@ end
 --enemy
 
 function dobrain(e)
+ --★ remove robustness
+ if braincheck(e)==false then return end
+ 
  local mybra=brains[e.brain]
  local quit=false
  if e.bri<#mybra then
@@ -730,15 +771,24 @@ function dobrain(e)
   if cmd=="hed" then
    --set heading / speed
    e.ang=par1
-   e.spd=par2	    
+   e.spd=par2
+   e.aspt=nil
   elseif cmd=="wai" then
    --wait x frames
    e.wait=par1
+   e.dist=par2
    quit=true
   elseif cmd=="asp" then
    --animate speed
    e.aspt=par1
    e.asps=par2
+  elseif cmd=="got" then
+   --★ remove robustness
+   e.brain=par1
+   e.bri=par2-3
+  else
+   --★ extra robustness
+   return
   end
   e.bri+=3
   if quit then return end
@@ -750,7 +800,7 @@ function doenemies()
  for e in all(enemies) do
   if e.wait>0 then
    e.wait-=1
-  else
+  elseif e.dist<=0 then
    dobrain(e)
   end
   
@@ -764,6 +814,7 @@ function doenemies()
   
   e.sx=sin(e.ang)*e.spd
   e.sy=cos(e.ang)*e.spd
+  e.dist=max(0,e.dist-abs(e.spd))
   
   e.x+=e.sx
   e.y+=e.sy
@@ -796,9 +847,49 @@ function spawnen(eni,enx,eny)
   flash=0,
   hp=en[4],
   col=en[5],
-  wait=0
+  wait=0,
+  dist=0
  })
 	
+end
+
+function braincheck(e)
+ if brains[e.brain]==nil then
+  if #msg>0 then
+   msg[1].t=5
+  else
+   add(msg,{txt="bad brain "..e.brain,t=5})
+  end
+  return false
+ end
+ 
+ local mybra=brains[e.brain]
+ if e.bri<1 then
+  if #msg>0 then
+   msg[1].t=5
+  else
+   add(msg,{txt="brain command index < 1",t=5})
+  end
+  return false
+ elseif e.bri<#mybra then
+  local cmd=mybra[e.bri]
+  local found=false
+  for c in all(cmdlist) do
+   if c==cmd then
+    found=true
+   end
+  end
+  if found==false then
+	  if #msg>0 then
+	   msg[1].t=5
+	  else
+	   add(msg,{txt="bad command "..cmd,t=5})
+	  end
+	  return false
+  end
+ end
+ 
+ return true
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
