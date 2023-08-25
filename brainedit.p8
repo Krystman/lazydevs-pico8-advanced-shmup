@@ -2,17 +2,13 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 --todo
--- animate speed
 
 -- goal
--- 3 turnaround
--- 4 shoot on retreat
 -- 5 snek
 -- 6 bumrush
 -- 7 boss
 
 -- todo
---- change brains?!
 
 function _init()
  --- customize here ---
@@ -48,12 +44,18 @@ function _init()
   "hed",
   "wai",
   "asp",
-  "got"
+  "got",
+  "fir",
+  "adr"
  }
+ 
+ execy=0
  
  scroll=0
  
  enemies={}
+ 
+ muzz={}
  
  poke(0x5f2d, 1)
 end
@@ -121,7 +123,19 @@ function draw_brain()
   drawobj(e)
  end
  
+ -- temp muzzle flashes
+ for m in all(muzz) do
+  m.r-=1
+  if m.en then
+   circfill(m.en.x,m.en.y,m.r,7)
+  end
+  if m.r<=0 then
+   del(muzz,m)
+  end
+ end
+ 
  drawmenu()
+ line(1,execy,1,execy+6,9)
 end
 
 function draw_table()
@@ -540,6 +554,8 @@ end
 function refresh_brain()
  menu={}
  menui={}
+ execy=-16
+ 
  if selbrain>#data then
   --empty brain slot
   add(menu,{{
@@ -573,6 +589,13 @@ function refresh_brain()
  local mybra=brains[selbrain]
  local ly=19
  for i=1,#mybra,3 do
+  if enemies[1] then
+   local myen=enemies[1]
+   if myen.brain==selbrain and myen.bri==i then
+    execy=ly-9
+   end
+  end
+ 
   local lne={}
   add(lne,{
 		 txt=mybra[i],
@@ -758,9 +781,19 @@ end
 -->8
 --enemy
 
-function dobrain(e)
+function dobrain(e,depth)
  --★ remove robustness
  if braincheck(e)==false then return end
+ local depth=depth or 1
+ if depth>100 then
+  if #msg>0 then
+   msg[1].t=5
+  else
+   add(msg,{txt="infinite loop",t=5})
+  end
+  return
+ end 
+ -- robustness code end
  
  local mybra=brains[e.brain]
  local quit=false
@@ -782,17 +815,24 @@ function dobrain(e)
    --animate speed
    e.aspt=par1
    e.asps=par2
+  elseif cmd=="adr" then
+   --animate direction
+   e.adrt=par1
+   e.adrs=par2
   elseif cmd=="got" then
-   --★ remove robustness
+   --goto
    e.brain=par1
    e.bri=par2-3
+  elseif cmd=="fir" then
+   --fire
+   firebul(e,par1,par2)
   else
    --★ extra robustness
    return
   end
   e.bri+=3
   if quit then return end
-  dobrain(e)
+  dobrain(e,depth+1)
  end
 end
 
@@ -809,6 +849,13 @@ function doenemies()
    if abs(e.aspt-e.spd)<abs(e.asps) then
     e.spd=e.aspt
     e.aspt=nil
+   end
+  end
+  if e.adrt then
+   e.ang+=e.adrs
+   if abs(e.adrt-e.ang)<abs(e.adrs) then
+    e.ang=e.adrt
+    e.adrt=nil
    end
   end
   
@@ -890,6 +937,13 @@ function braincheck(e)
  end
  
  return true
+end
+
+function firebul(_en,par1,par2)
+ add(muzz,{
+  en=_en,
+  r=8
+ })
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
