@@ -115,49 +115,48 @@ I want
  - X We need a tool to create mysprites
  - > How do we deal with animations?
 
+THIRD GOAL: Great Wall of Shmups
 
-
-SECOND GOAL: Great Wall of Shmups
-
--- - Animation System
+-- X Animation System
      - Make every animation work the same (Consolidation)
 
--- - Collision System
+-- X Collision System
      - unified collision box logistics
 
--- - Enemy Database System
+-- X Enemy Database System
      - we need a place to store enemy data
      - HP
      - Brain (!!!!)
      - Animation (!!!!)
      - Collision Box (!!!!)
      
--- - Schedule/Spawn System
+-- X Schedule/Spawn System
      - Critical Creative Payload
      - Needs a comfortable editor
-     - Good previews of enemy formations (Brain System linkup !!!!)
+   ! - Good previews of enemy formations (Brain System linkup !!!!)
      - Enemy database hookup (!!!!)
 
--- - Enemy Brain System
+-- X Enemy Brain System
      - Tricky!
      - Also needs an editor
      - how enemy behavior?
        - highly senstive numbers
        - need immediate feedback 
        - need and efficient way to define
-     - Bullet System hookup (!!!!)
+   ! - Bullet System hookup (!!!!)
 
--- - Bullet Pattern System
+-- ! Bullet Pattern System
      - Tricky as well
      - Also needs an editor
 
 - Smol things
-  - playert dies if they get hit by bullet
-  - xscroll big pita 
-  - enemy scrolling in sync with bg
-  - maybe our ship needs to be an object?
-  - merge splash system?
+  X playert dies if they get hit by bullet
+  X xscroll big pita 
+  - enemy scrolling in sync with bg (ground enemies)
+  X maybe our ship needs to be an object?
+  X merge splash system?
   - maybe update splash and muzz in draw?
+  - brain system leftover (boss location lock)
      
 
 
