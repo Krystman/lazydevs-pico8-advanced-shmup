@@ -4,11 +4,13 @@ __lua__
 --todo
 
 -- goal
--- 5 snek
 -- 6 bumrush
 -- 7 boss
 
 -- todo
+-- loop
+-- brain clone command?
+-- trails
 
 function _init()
  --- customize here ---
@@ -46,7 +48,8 @@ function _init()
   "asp",
   "got",
   "fir",
-  "adr"
+  "adr",
+  "clo"
  }
  
  execy=0
@@ -56,6 +59,8 @@ function _init()
  enemies={}
  
  muzz={}
+ 
+ overlay=false
  
  poke(0x5f2d, 1)
 end
@@ -121,6 +126,17 @@ function draw_brain()
  
  for e in all(enemies) do
   drawobj(e)
+  if overlay then
+   local ox=sin(e.ang)
+   local oy=cos(e.ang)
+   
+   local ox1=e.x+ox*12
+   local oy1=e.y+oy*12
+   pset(e.x,e.y,11)
+   line(ox1,oy1,
+        ox1+ox*8*e.spd,
+        oy1+oy*8*e.spd,11)
+  end
  end
  
  -- temp muzzle flashes
@@ -135,7 +151,7 @@ function draw_brain()
  end
  
  drawmenu()
- line(1,execy,1,execy+6,9)
+ line(1,execy,1,execy+6,11)
 end
 
 function draw_table()
@@ -253,6 +269,10 @@ end
 
 function update_brain()
  refresh_brain()
+ 
+ if key=="1" then
+  overlay= not overlay
+ end
  
  if btnp(⬆️) then
   cury-=1
@@ -826,6 +846,13 @@ function dobrain(e,depth)
   elseif cmd=="fir" then
    --fire
    firebul(e,par1,par2)
+  elseif cmd=="clo" then
+   for i=1,par1 do
+    local myclo=copylist(e)
+    myclo.wait+=i*par2
+    myclo.bri+=3
+    add(enemies,myclo)
+   end
   else
    --★ extra robustness
    return
@@ -944,6 +971,14 @@ function firebul(_en,par1,par2)
   en=_en,
   r=8
  })
+end
+
+function copylist(org)
+ local ret={}
+ for k, v in pairs(org) do
+  ret[k]=v
+ end
+ return ret
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
