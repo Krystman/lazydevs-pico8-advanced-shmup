@@ -166,8 +166,9 @@ function drw_game()
 	  end
 		 drawobj(pspr) 
 		 local fframe=anilib[1][t\3%4+1]
-		 mspr(fframe,pspr.x-1,py+8)
-		 mspr(fframe,pspr.x+2,py+8)
+		 for i=-1,2,3 do
+		  mspr(fframe,pspr.x+i,py+8)
+		 end
 		 pal()
 	 end
  else
@@ -196,7 +197,7 @@ function upd_game()
 
  --scrolling
  scroll+=0.2
- 
+  
  if #cursegs<1 or scroll>cursegs[#cursegs].o then
   if boss then
    scroll-=64
@@ -216,7 +217,8 @@ function upd_game()
   })
   
   --★
-  if #cursegs>2 and scroll-cursegs[1].o>=128 then
+  --if #cursegs>2 and scroll-cursegs[1].o>=128 then
+  if #cursegs>3 then
    deli(cursegs,1)
   end
  
@@ -229,7 +231,7 @@ function upd_game()
  end
  
  --movement
- local dir=butarr[1+btn()&0b1111]
+ local dir=butarr[1+(btn()&0b1111)]
  
  if lastdir!=dir and dir>=5 then
   --anti-cobblestone
@@ -358,12 +360,11 @@ function msprc(si,sx,sy)
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
  rect(sx-_ox,sy-_oy,sx-_ox+_w-1,sy-_oy+_h-1,rnd({8,14,15}))
 end
-
+  
 function split2d(s)
- local arr=split(s,"|",false)
- --for k, v in pairs(arr) do
- for k, v in inext, arr do
-  arr[k] = split(v)
+ local arr={}
+ for v in all(split(s,"|")) do
+  add(arr,split(v))
  end
  return arr
 end
@@ -518,43 +519,26 @@ function shoot()
  local shotspd=-6
  shotwait=2
  
- add(shots,{
-  x=pspr.x-4,
-  y=py-14,
-  sx=0,
-  sy=shotspd,
-  ani=anilib[3],
-  anis=2,
-  age=(t\2)%3+1,
-  col=29
- })
- add(shots,{
-  x=pspr.x+4,
-  y=py-14,
-  sx=0,
-  sy=shotspd,
-  ani=anilib[3],
-  anis=2,
-  age=(t\2)%3+1,
-  col=29
- })
- 
- add(parts,{
-   draw=sprite,
-   maxage=5,
-   x=-4,
-   y=-4,
-   ani=anilib[2],
-   plock=true
- })
- add(parts,{
-   draw=sprite,
-   maxage=5,
-   x=4,
-   y=-4,
-   ani=anilib[2],
-   plock=true
- })
+ for i=-4,4,8 do
+  add(shots,{
+   x=pspr.x+i,
+   y=py-14,
+   sx=0,
+   sy=shotspd,
+   ani=anilib[3],
+   anis=2,
+   age=(t\2)%3+1,
+   col=29
+  })
+	 add(parts,{
+	   draw=sprite,
+	   maxage=5,
+	   x=i,
+	   y=-4,
+	   ani=anilib[2],
+	   plock=true
+	 })
+ end
 
  sfx(0)
 end
@@ -783,7 +767,7 @@ function sprite(p)
  
  local _x,_y=p.x,p.y
  if p.plock then
-  _x+=px-xscroll
+  _x+=pspr.x
   _y+=py
  end
  mspr(cyc(p.age,p.ani,p.anis),_x,_y)

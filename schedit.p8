@@ -283,9 +283,13 @@ function update_move()
  
  if key=="w" then
   selsched[1]+=1
+  if selsched[1]>scroll then
+   scroll=selsched[1]
+  end
  end
  if key=="s" then
   selsched[1]-=1
+  if selsched[1]<0 then selsched[1]=0 end
  end
  
  
@@ -796,20 +800,21 @@ end
 function genens()
  enemies={}
  for sch in all(sched) do
-  local schx=sch[3]
-  local schy=sch[4]+scroll-sch[1]
-  
-  local en=enlib[sch[2] ]
-  local ani=anilib[en[1] ]
-  
-  add(enemies,{
-   x=schx,
-   y=schy,
-   s=cyc(t,ani,en[2]),
-   sched=sch,
-   col=en[5]
-  })
-  
+  if sch[1]<=scroll then
+	  local schx=sch[3]
+	  local schy=sch[4]+scroll-sch[1]
+	  
+	  local en=enlib[sch[2] ]
+	  local ani=anilib[en[1] ]
+	  
+	  add(enemies,{
+	   x=schx,
+	   y=schy,
+	   s=cyc(t,ani,en[2]),
+	   sched=sch,
+	   col=en[5]
+	  })
+  end
  end
 end
 

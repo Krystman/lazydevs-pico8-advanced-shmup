@@ -3,19 +3,24 @@ version 41
 __lua__
 --todo
 -- - meta brain data
+-- - -ui
+-- - -create meta on brain create
+-- - -delete meta on brain delete
 -- - more commands
 
 function _init()
  --- customize here ---
  #include shmup_brains.txt
+ #include shmup_brains_meta.txt
  file="shmup_brains.txt"
+ filem="shmup_brains_meta.txt"
+ 
  arrname="brains"
  data=brains
  #include shmup_myspr.txt
  #include shmup_enlib.txt
  #include shmup_anilib.txt
  ----------------------
- 
  debug={}
  msg={}
  
@@ -90,9 +95,7 @@ function draw_brain()
   drawobj(e)
  end
  
- 
  drawmenu()
-
 end
 
 function draw_table()
@@ -149,13 +152,51 @@ end
 -->8
 --update
 
+function update_setup()
+ refresh_setup()
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=mid(2,cury,#menu)
+ curx=2
+ 
+ if btnp(❎) then
+  local mymnu=menu[cury][curx]
+  if mymnu.cmd=="meta" then
+   _upd=upd_type
+   typetxt=tostr(mymnu.txt)
+   typecur=#typetxt+1
+   callback=enter_meta
+  end
+ end
+ 
+ if btnp(🅾️) then
+  _upd=update_brain
+  refresh_brain()
+  return
+ end
+ 
+ if data[selbrain] then
+  if #enemies==0 then
+   local selmeta=meta[selbrain]
+   
+   if enlib[selmeta[1]]!=nil then
+    spawnen(selmeta[1],selmeta[2],selmeta[3])
+   end  
+  end
+  doenemies()
+ else
+  enemies={}
+ end
+
+end
+
 function update_brain()
  refresh_brain()
  
- if #enemies==0 then
-  spawnen(1,64,64)
- end
-
  if btnp(⬆️) then
   cury-=1
  end
@@ -196,7 +237,9 @@ function update_brain()
    add(data[mymnu.cmdb],"0")
    add(data[mymnu.cmdb],"0")   
   elseif mymnu.cmd=="setup" then
-  
+   refresh_setup()
+   _upd=update_setup
+   return
   elseif mymnu.cmd=="newbrain" then
    add(data,{
     "wai",0,0
@@ -204,8 +247,17 @@ function update_brain()
   end
   return 
  end
- 
- doenemies()
+ if data[selbrain] then
+  if #enemies==0 then
+   local selmeta=meta[selbrain]
+   if enlib[selmeta[1]]!=nil then
+    spawnen(selmeta[1],selmeta[2],selmeta[3])
+   end
+  end
+  doenemies()
+ else
+  enemies={}
+ end
 end
 
 function update_table()
@@ -375,14 +427,66 @@ function export()
 	  s..=data[i][j]
   end
  end
- 
  s..="\""
  printh(s,file,true)
+ 
+ local s="meta=split2d\""
+ for i=1,#meta do
+  if i>1 then
+   s..="|"
+  end
+  for j=1,#meta[i] do
+	  if j>1 then
+	   s..=","
+	  end
+	  s..=meta[i][j]
+  end
+ end
+ s..="\""
+ printh(s,filem,true)
+
  add(msg,{txt="exported!",t=120})
  --debug[1]="exported!"
 end
 -->8
 --ui
+
+function refresh_setup()
+ menu={}
+ add(menu,{{
+	 txt="brain "..selbrain,
+	 w="        ",
+	 cmd="",
+	 x=3,
+	 y=3,
+	 c=13  
+ }})
+ 
+ local cap={"en:"," x:"," y:"}
+ local selmeta=meta[selbrain]
+ for i=1,3 do
+  local lne={}
+  add(lne,{
+	  txt=cap[i],
+	  w="  ",
+	  cmd="",
+	  x=3,
+	  y=3+i*6+2,
+	  c=13  
+  })
+  add(lne,{
+	  txt=selmeta[i],
+	  w="   ",
+	  cmd="meta",
+	  cmdy=i,
+	  x=3+12,
+	  y=3+i*6+2,
+	  c=13  
+  })
+  add(menu,lne)
+ end
+
+end
 
 function refresh_brain()
  menu={}
@@ -566,6 +670,20 @@ function enter_brain()
   end
  end
  data[mymnu.cmdb][mymnu.cmdi]=typeval
+
+end
+
+function enter_meta()
+ _upd=update_setup
+
+ local mymnu=menu[cury][curx]
+ local typeval=tonum(typetxt)
+ enemies={}
+ 
+ if typeval==nil then
+  typeval=0
+ end
+ meta[selbrain][mymnu.cmdy]=typeval
 
 end
 -->8
