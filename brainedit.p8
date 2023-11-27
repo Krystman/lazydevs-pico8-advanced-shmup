@@ -24,6 +24,7 @@ function _init()
  #include shmup_myspr.txt
  #include shmup_enlib.txt
  #include shmup_anilib.txt
+ #include shmup_pats.txt
  ----------------------
  debug={}
  msg={}
@@ -59,6 +60,7 @@ function _init()
  scroll=0
   
  enemies={}
+ buls={} 
  
  muzz={}
  
@@ -158,6 +160,10 @@ function draw_brain()
         ox1+ox*8*abs(e.spd),
         oy1+oy*8*abs(e.spd),11)
   end
+ end
+ 
+ for s in all(buls) do
+  drawobj(s) 
  end
  
  -- temp muzzle flashes
@@ -291,7 +297,9 @@ function update_setup()
     reseten()
    end  
   end
+  dobuls(buls)
   doenemies()  
+  
  else
   enemies={}
  end
@@ -390,7 +398,9 @@ function update_brain()
     reseten()
    end
   end
+  dobuls(buls)
   doenemies()
+  
   if protag and t%5==0 then
    add(newtrails,{protag.x,protag.y})
   end
@@ -550,6 +560,10 @@ function onscreen(obj)
  if obj.x>136 then return false end
  if obj.y>136 then return false end 
  return true
+end
+
+function spread(val)
+ return (rnd(2)-1)*val
 end
 -->8
 --i/o
@@ -913,7 +927,7 @@ function dobrain(e,depth)
    end
   elseif cmd=="fir" then
    --fire
-   firebul(e,par1,par2)
+   patshoot(e,par1,par2)
   elseif cmd=="clo" then
    --clone
    for i=1,par1 do
@@ -985,7 +999,10 @@ function doenemies()
   
   if not onscreen(e) then
    del(enemies,e)
+  else  
+   dobulq(e)
   end
+  
  end
 end
 
@@ -996,6 +1013,7 @@ function reseten()
  spawnen(selmeta[1],selmeta[2],selmeta[3])
  protag=enemies[1]
  newtrails={}
+ buls={}
 end
 
 function spawnen(eni,enx,eny)
@@ -1017,7 +1035,8 @@ function spawnen(eni,enx,eny)
   hp=en[4],
   col=en[5],
   wait=0,
-  dist=0
+  dist=0,
+  bulq={}
  })
 	
 end
@@ -1060,14 +1079,6 @@ function braincheck(e)
  
  return true
 end
-
-function firebul(_en,par1,par2)
- add(muzz,{
-  en=_en,
-  r=8
- })
-end
-
 --- tools 
 
 function copylist(org)
@@ -1081,6 +1092,113 @@ end
 function dist(x1,y1,x2,y2)
  local dx,dy=x2-x1,y2-y1
  return sqrt(dx*dx+dy*dy)
+end
+-->8
+--pats
+
+function makepat(pat,pang)
+ local mypat,ret=pats[pat],{}
+ local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
+ if patype=="base" then
+  add(ret,{
+   age=0,
+   x=0,
+   y=0,
+   ang=pang,
+   spd=p2,
+   ani=anilib[p3],
+   anis=p4,
+   col=p5,
+   wait=0
+  })
+ elseif patype=="some" then
+  if rnd()<p3 then
+   ret=makepat(p3,pang)
+  end
+ elseif patype=="sprd" then
+  for i=p3-1,p4-1 do
+   for p in all(makepat(p2,pang)) do
+    p.spd+=i*p6
+    p.wait+=i*p7
+    add(ret,p)
+    if i>0 and p8>0 then
+     local copyp=copylist(p)
+     copyp.ang+=i*-p5
+     add(ret,copyp)
+    end
+    p.ang+=i*p5
+   end
+  end
+ elseif patype=="brst" then
+  for i=1,p3 do
+   local rndw,rnds=flr(rnd(p6)),rnd(p5)
+   for p in all(makepat(p2,pang+spread(p4))) do
+    p.wait+=rndw
+    p.spd+=rnds
+    add(ret,p)
+   end
+  end
+ elseif patype=="comb" then
+  for i=2,5 do
+   if mypat[i]>0 then
+    for p in all(makepat(mypat[i],pang)) do
+     add(ret,p)
+    end
+   end
+  end
+ end
+ 
+ return ret
+end
+
+
+function patshoot(en,pat,pang)
+ 
+ if pang==-99 then
+  pang=atan2(pspr.y-en.y,pspr.x-en.x)
+ end
+
+ local mybuls=makepat(pat,pang)
+
+ for b in all(mybuls) do
+  add(en.bulq,b)
+ end
+end
+
+function dobulq(en)
+ local oldb=#buls
+ for b in all(en.bulq) do
+  if b.wait<=0 then
+	  b.x+=en.x
+	  b.y+=en.y
+	  b.sx=sin(b.ang)*b.spd
+	  b.sy=cos(b.ang)*b.spd
+	  
+   add(buls,b)
+   del(en.bulq,b)
+  else
+   b.wait-=1
+  end
+ end
+ if oldb!=#buls then
+	 add(muzz,{
+	  en=en,
+	  r=8
+	 })
+	end
+	 
+end
+
+function dobuls(arr)
+ for s in all(arr) do
+  s.age+=1
+  s.x+=s.sx
+  s.y+=s.sy
+    
+  if s.y<-16 or s.y>130 then
+   del(arr,s)
+  end
+ end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

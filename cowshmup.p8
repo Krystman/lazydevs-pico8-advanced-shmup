@@ -3,23 +3,16 @@ version 41
 __lua__
 
 -- goals
--- - enemy brain system
--- - - brain database
--- - - interpreter
--- - - what commands?
--- - - delete old enemies
-
--- - bullet pattern system
 
 -- smol things
+--  - better onscreen function
 --  - anilib in drawobj
---  - playert dies if they get hit by bullet
 --  - xscroll big pita 
 --  - enemy scrolling in sync with bg
 --  - merge splash system?
 --  - maybe update splash and muzz in draw?
 --  - freeze / die / inviz overhaul
-     
+  
 function _init()
  t=0
  debug={}
@@ -30,6 +23,7 @@ function _init()
  #include shmup_sched.txt
  #include shmup_mapsegs.txt
  #include shmup_brains.txt
+ #include shmup_pats.txt
  
  butarr=split "1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1"
  dirx=split "0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7"
@@ -46,6 +40,8 @@ function _init()
  
  --★
  --coldebug=true
+ 
+ 
 end
 
 function startgame()
@@ -449,13 +445,15 @@ function spawnen(eni,enx,eny)
   sy=0,
   ang=0,
   spd=0,
-  brain=1,--en[3],
+  brain=en[3],
   bri=1,
   age=0,
   flash=0,
   hp=en[4],
   col=en[5],
-  wait=0
+  wait=0,
+  dist=0,
+  bulq={}
  })
 	
 end
@@ -464,21 +462,58 @@ function doenemies()
  for e in all(enemies) do
   if e.wait>0 then
    e.wait-=1
-  else
-   dobrain(e)
+  elseif e.dist<=0 then
+   dobrain(e,1)
   end
-    
+  
+  if e.flw then
+   local diff=atan2(pspr.y-e.y,pspr.x-e.x)-e.ang   
+   if abs(diff)>0.5 then
+    diff-=sgn(diff)
+   end
+   
+   e.ang+=mid(-e.flws,diff,e.flws)
+   
+   if dist(pspr.x,pspr.y,e.x,e.y)<25 then
+    e.flw=false
+   end
+   e.ang=e.ang%1
+  end
+  
+  if e.aspt then
+   e.spd+=e.asps
+   if abs(e.aspt-e.spd)<abs(e.asps) then
+    e.spd=e.aspt
+    e.aspt=nil
+   end
+  end
+  if e.adrt then
+   e.ang+=e.adrs
+   if abs(e.adrt-e.ang)<abs(e.adrs) then
+    e.ang=e.adrt
+    e.adrt=nil
+   end
+  end
+  
   e.sx=sin(e.ang)*e.spd
   e.sy=cos(e.ang)*e.spd
+  e.dist=max(0,e.dist-abs(e.spd))
   
   e.x+=e.sx
   e.y+=e.sy
   
   e.age+=1
+  
+  if not onscreen(e) then
+   --del(enemies,e)
+  else  
+   dobulq(e)
+  end
+  
  end
 end
 
-function dobrain(e)
+function dobrain(e,depth) 
  local mybra=brains[e.brain]
  local quit=false
  if e.bri<#mybra then
@@ -488,15 +523,55 @@ function dobrain(e)
   if cmd=="hed" then
    --set heading / speed
    e.ang=par1
-   e.spd=par2	    
+   e.spd=par2
+   e.aspt=nil
+   e.flw=false
   elseif cmd=="wai" then
    --wait x frames
    e.wait=par1
+   e.dist=par2
    quit=true
+  elseif cmd=="asp" then
+   --animate speed
+   e.aspt=par1
+   e.asps=par2
+  elseif cmd=="adr" then
+   --animate direction
+   e.adrt=par1
+   e.adrs=par2
+   e.flw=false
+  elseif cmd=="got" then
+   --goto
+   e.brain=par1
+   e.bri=par2-3
+  elseif cmd=="lop" then
+   --loop
+   e.loop=e.loop and e.loop+1 or 1
+   if e.loop<par1 then
+    e.bri=par2-3
+   else
+    e.loop=0
+   end
+  elseif cmd=="fir" then
+   --fire
+   patshoot(e,par1,par2)
+  elseif cmd=="clo" then
+   --clone
+   for i=1,par1 do
+    local myclo=copylist(e)
+    myclo.wait+=i*par2
+    myclo.bri+=3
+    add(enemies,myclo)
+   end
+  elseif cmd=="flw" then
+   --follow
+   e.flw=true
+   e.flws=par1
+   --par2??
   end
   e.bri+=3
   if quit then return end
-  dobrain(e)
+  dobrain(e,depth+1)
  end
 end
 
@@ -541,6 +616,118 @@ function shoot()
  end
 
  sfx(0)
+end
+
+function onscreen(obj)
+ if obj.x<-8 then return false end
+ if obj.y<-8 then return false end
+ if obj.x>136 then return false end
+ if obj.y>136 then return false end 
+ return true
+end
+
+function makepat(pat,pang)
+ local mypat,ret=pats[pat],{}
+ local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
+ if patype=="base" then
+  add(ret,{
+   age=0,
+   x=0,
+   y=0,
+   ang=pang,
+   spd=p2,
+   ani=anilib[p3],
+   anis=p4,
+   col=p5,
+   wait=0
+  })
+ elseif patype=="some" then
+  if rnd()<p3 then
+   ret=makepat(p3,pang)
+  end
+ elseif patype=="sprd" then
+  for i=p3-1,p4-1 do
+   for p in all(makepat(p2,pang)) do
+    p.spd+=i*p6
+    p.wait+=i*p7
+    add(ret,p)
+    if i>0 and p8>0 then
+     local copyp=copylist(p)
+     copyp.ang+=i*-p5
+     add(ret,copyp)
+    end
+    p.ang+=i*p5
+   end
+  end
+ elseif patype=="brst" then
+  for i=1,p3 do
+   local rndw,rnds=flr(rnd(p6)),rnd(p5)
+   for p in all(makepat(p2,pang+spread(p4))) do
+    p.wait+=rndw
+    p.spd+=rnds
+    add(ret,p)
+   end
+  end
+ elseif patype=="comb" then
+  for i=2,5 do
+   if mypat[i]>0 then
+    for p in all(makepat(mypat[i],pang)) do
+     add(ret,p)
+    end
+   end
+  end
+ end
+ 
+ return ret
+end
+
+function patshoot(en,pat,pang)
+ 
+ if pang==-99 then
+  pang=atan2(pspr.y-en.y,pspr.x-en.x)
+ end
+
+ local mybuls=makepat(pat,pang)
+
+ for b in all(mybuls) do
+  add(en.bulq,b)
+ end
+end
+
+function dobulq(en)
+ local oldb=#buls
+ for b in all(en.bulq) do
+  if b.wait<=0 then
+	  b.x+=en.x
+	  b.y+=en.y
+	  b.sx=sin(b.ang)*b.spd
+	  b.sy=cos(b.ang)*b.spd
+	  
+   add(buls,b)
+   del(en.bulq,b)
+  else
+   b.wait-=1
+  end
+ end
+ if oldb!=#buls then
+	 add(muzz,{
+	  en=en,
+	  r=8
+	 })
+	end
+	 
+end
+
+function dobuls(arr)
+ for s in all(arr) do
+  s.age+=1
+  s.x+=s.sx
+  s.y+=s.sy
+    
+  if s.y<-16 or s.y>130 then
+   del(arr,s)
+  end
+ end
 end
 -->8
 --particles
