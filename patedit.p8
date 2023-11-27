@@ -3,8 +3,8 @@ version 41
 __lua__
 -- todo
 ------------------
--- move simiulated enemy with mouse
--- fire on click
+-- ui to edit the pattern modules
+-- make the patterns do the thing
 
 -- assumptions
 ------------------
@@ -15,7 +15,8 @@ __lua__
 ------------------
 -- 1 static
 -- 2 aimed
--- 3 rapid fire
+-- 3a sometimes fire
+-- 3b rapid fire
 -- 4 spread
 -- 5 burst
 -- 6 spread of spreads
@@ -63,6 +64,9 @@ function _init()
  buls={} 
  
  poke(0x5f2d, 1)
+ 
+
+
 end
 
 function _draw()
@@ -240,7 +244,7 @@ function update_pats()
  enspr.y=mousey
  
  if clkl then
-  patshoot(enspr,1)
+  patshoot(enspr,3)
  end 
  dobuls(buls)
 end
@@ -496,15 +500,38 @@ function dobuls(arr)
 end
 
 function patshoot(en,pat)
- add(buls,{
-  x=en.x,
-  y=en.y,
-  sx=0,
-  sy=1,
-  ani=anilib[6],
-  anis=1,
-  age=0
- })
+ local mybuls=makepat(pat)
+
+ for b in all(mybuls) do
+  b.x+=en.x
+  b.y+=en.y
+  b.sx=sin(b.ang)*b.spd
+  b.sy=cos(b.ang)*b.spd
+  
+  add(buls,b)
+ end
+ 
+
+end
+
+function makepat(pat)
+ local mypat=pats[pat]
+ local ret={} 
+ if mypat[1]=="base" then
+  add(ret,{
+   age=0,
+   x=0,
+   y=0,
+   ang=mypat[2],
+   spd=mypat[3],
+   ani=anilib[mypat[4]],
+   anis=mypat[5],
+   col=mypat[6]
+  })
+ end
+ 
+ return ret
+
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

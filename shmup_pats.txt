@@ -1,1 +1,1 @@
-pats=split2d""
+pats=split2d"base,0,1,11,3,40|base,0,1,12,3,40|base,0,1,13,3,40"
