@@ -133,7 +133,7 @@ THIRD GOAL: Great Wall of Shmups
 -- X Schedule/Spawn System
      - Critical Creative Payload
      - Needs a comfortable editor
-   ! - Good previews of enemy formations (Brain System linkup !!!!)
+   x - Good previews of enemy formations (Brain System linkup !!!!)
      - Enemy database hookup (!!!!)
 
 -- X Enemy Brain System
@@ -143,9 +143,9 @@ THIRD GOAL: Great Wall of Shmups
        - highly senstive numbers
        - need immediate feedback 
        - need and efficient way to define
-   ! - Bullet System hookup (!!!!)
+   x - Bullet System hookup (!!!!)
 
--- ! Bullet Pattern System
+-- X Bullet Pattern System
      - Tricky as well
      - Also needs an editor
 
@@ -156,7 +156,23 @@ THIRD GOAL: Great Wall of Shmups
   X maybe our ship needs to be an object?
   X merge splash system?
   - maybe update splash and muzz in draw?
-  - brain system leftover (boss location lock)
+  - brain system leftover (enemy goto location command)
      
+FOURTH GOAL: Workflow Test Run
+- I want to create a few seconds of gameplay (50secs)
 
+- Before
+  - Autosave
+  - Music/SFX
 
+- Create a few seconds of gameplay (50secs)
+
+- Identify Needs
+  - Do we need boss phases?
+  - Spawningv minions?
+
+- Smol things
+  - enemy scrolling in sync with bg (ground enemies)
+  - maybe update splash and muzz in draw?
+  - brain system leftover (enemy goto location command)
+     

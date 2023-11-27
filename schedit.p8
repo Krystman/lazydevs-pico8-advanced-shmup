@@ -1,9 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---show cursor
---move the cursor
---backspace
+-- path
+-------
 
 function _init()
  --- customize here ---
@@ -15,8 +14,21 @@ function _init()
  #include shmup_enlib.txt
  #include shmup_anilib.txt
  #include shmup_myspr.txt
+ #include shmup_brains_trails.txt
  ----------------------
- 
+
+ -- process trails --
+ for i=1,#trails do
+  local myt=trails[i]
+  for j=1,#myt do
+   myt[j]=split(myt[j],":")
+   if #myt[j]!=2 then
+    myt[j]={0,0}
+   end
+  end
+ end
+ -------------------
+  
  debug={}
  msg={}
  
@@ -256,11 +268,29 @@ function drawbg()
   mspr(en.s,en.x,en.y)
   if en.sched==selsched then
    rect(en.x-8,en.y-8,en.x+9,en.y+9,rnd({6,7}))
+   drawtrail(en)
   end
+  print(en.age,en.x,en.y,7)
+  --drawtrail(en)
  end
  
  camera()
 end
+
+function drawtrail(en)
+ local mysched=en.sched
+ 
+ local curtrails=trails[en.brain]
+ for t in all(curtrails) do
+  local enx=t[1]+mysched[3]
+  local eny=t[2]+mysched[4]
+  
+  --mspr(en.s,enx,eny)
+  pset(enx,eny,7)
+ end
+
+end
+
 -->8
 --update
 
@@ -800,23 +830,37 @@ end
 function genens()
  enemies={}
  for sch in all(sched) do
+ 
   if sch[1]<=scroll then
-	  local schx=sch[3]
-	  local schy=sch[4]+scroll-sch[1]
-	  
 	  local en=enlib[sch[2] ]
-	  local ani=anilib[en[1] ]
-	  
-	  add(enemies,{
-	   x=schx,
-	   y=schy,
-	   s=cyc(t,ani,en[2]),
-	   sched=sch,
-	   col=en[5]
-	  })
+   local curtrails=trails[en[3]]
+   local enage=(scroll-sch[1])
+   local trailage=enage+1
+   
+   if trailage<=#curtrails then
+
+		  local ani=anilib[en[1] ]   
+		  local schx=sch[3]+curtrails[trailage][1]
+		  local schy=sch[4]+curtrails[trailage][2]
+	
+		  --local schx=sch[3]
+		  --local schy=sch[4]+scroll-sch[1]
+	 
+		  add(enemies,{
+		   x=schx,
+		   y=schy,
+		   s=cyc(t,ani,en[2]),
+		   sched=sch,
+		   col=en[5],
+		   brain=en[3],
+		   age=enage
+		  })
+	  end
   end
  end
 end
+
+
 
 function refresh_table()
  menu={}

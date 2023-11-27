@@ -3,11 +3,6 @@ version 41
 __lua__
 --todo
 
--- path
--------
--- load trails in schedit
--- show trails in schedit
-
 -- todo
 -------
 -- autosave
@@ -40,8 +35,6 @@ function _init()
    end
   end
  end
- 
- 
  -------------------
  debug={}
  msg={}
