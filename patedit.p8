@@ -3,8 +3,8 @@ version 41
 __lua__
 -- todo
 ------------------
--- figure out the aimed vs static
--- sometimes pat
+-- spread
+-- - both sides / mirror?
 -- rapid fire pat
 
 -- assumptions
@@ -14,9 +14,6 @@ __lua__
 
 -- pattern goals
 ------------------
--- 1 static
--- 2 aimed
--- 3a sometimes fire
 -- 3b rapid fire
 -- 4 spread
 -- 5 burst
@@ -245,7 +242,7 @@ function update_pats()
  enspr.y=mousey
  
  if clkl and selpat<=#pats then
-  patshoot(enspr,selpat)
+  patshoot(enspr,selpat,-99)
  end 
  dobuls(buls)
  
@@ -283,14 +280,7 @@ function update_pats()
    callback=enter_pat
    return
   elseif mymnu.cmd=="newpat" then
-   add(pats,{
-    "base",
-    0,
-    1,
-    11,
-    3,
-    40
-   })
+   add(pats,newpat("base"))
    return
   elseif mymnu.cmd=="delpat" then
    deli(pats,selpat)
@@ -518,13 +508,31 @@ function refresh_pats()
   }
  })
  
- local mycap={
-  "ang :",
-  "spd :",
-  "ani :",
-  "anis:",
-  "col :" 
- }
+ local mycap={}
+ if mypat[1]=="base" then
+	 mycap={
+	  "spd :",
+	  "ani :",
+	  "anis:",
+	  "col :" 
+	 }
+ elseif mypat[1]=="some" then
+	 mycap={
+	  "src :",
+	  "perc:"
+	 } 
+ elseif mypat[1]=="sprd" then
+	 mycap={
+	  "src :",
+	  "num :",
+	  "ang :"
+	 } 
+
+ else
+  for i=2,#mypat do
+   add(mycap,"p"..i..":")
+  end
+ end
  
  for i=2,#mypat do
 	 add(menu,{
@@ -614,14 +622,50 @@ function refresh_table()
  }})
 end
 
+function newpat(typ)
+ if typ=="base" then
+  return {
+   "base",
+   1,
+   11,
+   3,
+   40
+  } 
+ elseif typ=="some" then
+  return {
+   "some",
+   1,
+   0.5
+  }
+ elseif typ=="sprd" then
+  return {
+   "sprd",
+   1,
+   1,
+   0.5
+  }
+ else
+  return {
+   typ
+  } 
+ end
+
+end
+
 function enter_pat()
  local mymnu=menu[cury][curx]
  local typeval=typetxt
  
  if mymnu.cmdx==1 then
   --tricky!!
-  data[mymnu.cmdy][mymnu.cmdx]="base"
+  if data[mymnu.cmdy][mymnu.cmdx]!=typetxt and typetxt!="" then
+   data[mymnu.cmdy]=newpat(typetxt)   
+  end
  else
+  typeval=tonum(typeval)
+  if typeval==nil then
+   typeval=0
+  end
   data[mymnu.cmdy][mymnu.cmdx]=tonum(typeval)
  end
  _upd=update_pats
@@ -660,8 +704,12 @@ function dobuls(arr)
  end
 end
 
-function patshoot(en,pat)
- local mybuls=makepat(pat)
+function patshoot(en,pat,pang)
+ if pang==-99 then
+  pang=atan2(pspr.y-en.y,pspr.x-en.x)
+ end
+
+ local mybuls=makepat(pat,pang)
 
  for b in all(mybuls) do
   b.x+=en.x
@@ -675,20 +723,32 @@ function patshoot(en,pat)
 
 end
 
-function makepat(pat)
+function makepat(pat,pang)
  local mypat=pats[pat]
+ local patype=mypat[1]
  local ret={} 
- if mypat[1]=="base" then
+ if patype=="base" then
   add(ret,{
    age=0,
    x=0,
    y=0,
-   ang=mypat[2],
-   spd=mypat[3],
-   ani=anilib[mypat[4]],
-   anis=mypat[5],
-   col=mypat[6]
+   ang=pang,
+   spd=mypat[2],
+   ani=anilib[mypat[3]],
+   anis=mypat[4],
+   col=mypat[5]
   })
+ elseif patype=="some" then
+  if rnd()<mypat[3] then
+   ret=makepat(mypat[2],pang)
+  end
+ elseif patype=="sprd" then
+  for i=1,mypat[3] do
+   local nxpat=makepat(mypat[2],pang+((i-1)*mypat[4]))
+   for p in all(nxpat) do
+    add(ret,p)
+   end
+  end
  end
  
  return ret
