@@ -3,8 +3,9 @@ version 41
 __lua__
 -- todo
 ------------------
--- ui to edit the pattern modules
--- make the patterns do the thing
+-- figure out the aimed vs static
+-- sometimes pat
+-- rapid fire pat
 
 -- assumptions
 ------------------
@@ -65,7 +66,7 @@ function _init()
  
  poke(0x5f2d, 1)
  
-
+ selpat=1
 
 end
 
@@ -243,10 +244,62 @@ function update_pats()
  enspr.x=mousex
  enspr.y=mousey
  
- if clkl then
-  patshoot(enspr,3)
+ if clkl and selpat<=#pats then
+  patshoot(enspr,selpat)
  end 
  dobuls(buls)
+ 
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=mid(1,cury,#menu)
+ 
+ if cury==1 then
+  curx=1
+  if btnp(⬅️) then
+   selpat-=1
+  end
+  if btnp(➡️) then
+   selpat+=1
+  end
+  selpat=mid(1,selpat,#pats+1)
+ elseif cury==2 then
+  curx=1
+ elseif cury==#menu then
+  curx=1
+ else
+	 curx=2
+ end
+ 
+ if btnp(❎) then
+  local mymnu=menu[cury][curx]
+  if mymnu.cmd=="patedit" then
+   _upd=upd_type
+   typetxt=tostr(mymnu.txt)
+   typecur=#typetxt+1
+   callback=enter_pat
+   return
+  elseif mymnu.cmd=="newpat" then
+   add(pats,{
+    "base",
+    0,
+    1,
+    11,
+    3,
+    40
+   })
+   return
+  elseif mymnu.cmd=="delpat" then
+   deli(pats,selpat)
+   add(msg,{txt="pat deleted!",t=120})
+
+  end
+ end
+ 
+ 
 end
 
 function update_table()
@@ -296,6 +349,7 @@ function update_table()
    _upd=upd_type
    typetxt=tostr(mymnu.txt)
    typecur=#typetxt+1
+   callback=enter_table
   elseif mymnu.cmd=="newline" then
    add(data,{0})  
   elseif mymnu.cmd=="newcell" then
@@ -308,24 +362,8 @@ function upd_type()
  if key then
   if key=="\r" then
    -- enter
-   local mymnu=menu[cury][curx]
    poke(0x5f30,1)
-   local typeval=tonum(typetxt)
-   if typeval==nil then
-    if mymnu.cmdx==#data[mymnu.cmdy] and typetxt=="" then
-     --delete cell
-     deli(data[mymnu.cmdy],mymnu.cmdx)
-     if mymnu.cmdx==1 then
-      deli(data,mymnu.cmdy)
-     end
-     _upd=update_table
-     return
-    end  
-    typeval=0
-   end
-   
-   data[mymnu.cmdy][mymnu.cmdx]=typeval
-   _upd=update_table
+   callback()
    return
   elseif key=="\b" then
    --backspace
@@ -364,6 +402,14 @@ end
 
 function bgprint(txt,x,y,c)
  print("\#0"..txt,x,y,c)
+end
+
+function spacejam(n)
+ local ret=""
+ for i=1,n do
+  ret..=" "
+ end
+ return ret
 end
 
 function split2d(s)
@@ -434,6 +480,89 @@ end
 
 function refresh_pats()
  menu={}
+ if selpat>#pats then
+	 add(menu,{
+	  {
+		  txt="< new pat ",
+		  w="          ",
+		  cmd="newpat",
+		  x=4,
+		  y=4,
+		  c=13  
+	  }
+	 })
+	 return 
+ end
+ local mypat=pats[selpat]
+ add(menu,{
+  {
+	  txt="< pat "..selpat.." >",
+	  w="    ",
+	  cmd="pat",
+	  x=4,
+	  y=4,
+	  c=13  
+  }
+ })
+ 
+ add(menu,{
+  {
+	  txt=mypat[1],
+	  w="    ",
+	  cmd="patedit",
+	  cmdy=selpat,
+	  cmdx=1,
+	  x=4,
+	  y=12,
+	  c=13  
+  }
+ })
+ 
+ local mycap={
+  "ang :",
+  "spd :",
+  "ani :",
+  "anis:",
+  "col :" 
+ }
+ 
+ for i=2,#mypat do
+	 add(menu,{
+		 {
+		  txt=mycap[i-1],
+		  w="     ",
+		  cmd="",
+		  cmdy=selpat,
+		  cmdx=i,
+		  x=4,
+		  y=6+i*7,
+		  c=13  
+	  },
+	  {
+		  txt=mypat[i],
+		  w=spacejam(#tostr(mypat[i])),
+		  cmd="patedit",
+		  cmdy=selpat,
+		  cmdx=i,
+		  x=24,
+		  y=6+i*7,
+		  c=13  
+	  }
+	 }) 
+ end
+ 
+	add(menu,{
+	 {
+	  txt="delete",
+	  w="      ",
+	  cmd="delpat",
+	  cmdy=selpat,
+	  x=4,
+	  y=6+#mypat*7+9,
+	  c=13  
+		}
+	})
+
 end
 
 function refresh_table()
@@ -483,6 +612,38 @@ function refresh_table()
   x=4,
   y=-4+8*(#data+1), 
  }})
+end
+
+function enter_pat()
+ local mymnu=menu[cury][curx]
+ local typeval=typetxt
+ 
+ if mymnu.cmdx==1 then
+  --tricky!!
+  data[mymnu.cmdy][mymnu.cmdx]="base"
+ else
+  data[mymnu.cmdy][mymnu.cmdx]=tonum(typeval)
+ end
+ _upd=update_pats
+end
+
+function enter_table()
+ local mymnu=menu[cury][curx]
+ local typeval=typetxt
+ if typeval==nil or typeval=="" then
+  if mymnu.cmdx==#data[mymnu.cmdy] and typetxt=="" then
+   --delete cell
+   deli(data[mymnu.cmdy],mymnu.cmdx)
+   if mymnu.cmdx==1 then
+    deli(data,mymnu.cmdy)
+   end
+   _upd=update_table
+   return
+  end  
+  typeval=0
+ end   
+ data[mymnu.cmdy][mymnu.cmdx]=typeval
+ _upd=update_table
 end
 -->8
 --pats

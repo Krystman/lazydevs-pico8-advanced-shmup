@@ -2,6 +2,8 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 --todo
+-- autosave
+-- prevent scrolling after exiting to list
 -- copy?
 -- nudge values
 -- direct spritemap selection
