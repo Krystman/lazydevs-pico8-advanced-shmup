@@ -3,21 +3,17 @@ version 41
 __lua__
 -- todo
 ------------------
--- spread
--- - both sides / mirror?
+-- combine modifier
+-- angle indicator
+-- minimize
+-- bring it into the game
+-- bring it into brainedit
 
 -- assumptions
 ------------------
 -- bullets don't change direction
 -- bullets don't change speed
 
--- pattern goals
-------------------
--- 4 spread
--- 6 spread of spreads
--- 7 turning rapid fire (spiral)
--- 8 chunker spread
--- 9 labirinth
 
 function _init()
  --- customize here ---
@@ -167,6 +163,8 @@ function draw_pats()
  end
    
  drawmenu()
+
+ bgprint(#buls,3,120,5)
 
 end
 
@@ -533,15 +531,13 @@ function refresh_pats()
  elseif mypat[1]=="sprd" then
 	 mycap={
 	  "src :",
-	  "num :",
-	  "ang :"
-	 } 
- elseif mypat[1]=="rapd" then
-	 mycap={
-	  "src :",
-	  "num :",
-	  "time:"
-	 } 
+	  "from:",
+	  "to  :",
+	  "ang :",
+	  "spd :",
+	  "time:",
+	  "mirr:"
+	 }  
  elseif mypat[1]=="brst" then
 	 mycap={
 	  "src :",
@@ -665,14 +661,11 @@ function newpat(typ)
    "sprd",
    1,
    1,
-   0.5
-  }
- elseif typ=="rapd" then
-  return {
-   "rapd",
    1,
-   1,
-   2
+   0.1,
+   0,
+   0,
+   0
   }
  elseif typ=="brst" then
   return {
@@ -680,7 +673,7 @@ function newpat(typ)
    1,
    1,
    0.5,
-   0.5,
+   0,
    5
   }
  else
@@ -791,18 +784,20 @@ function makepat(pat,pang)
    ret=makepat(mypat[2],pang)
   end
  elseif patype=="sprd" then
-  for i=1,mypat[3] do
-   local nxpat=makepat(mypat[2],pang+((i-1)*mypat[4]))
+  for i=mypat[3],mypat[4] do
+   local nxpat=makepat(mypat[2],pang+(i-1)*mypat[5])
    for p in all(nxpat) do
+    p.spd+=(i-1)*mypat[6]
+    p.wait+=(i-1)*mypat[7]
     add(ret,p)
    end
-  end
- elseif patype=="rapd" then
-  for i=1,mypat[3] do
-   local nxpat=makepat(mypat[2],pang)
-   for p in all(nxpat) do
-    p.wait+=mypat[4]*(i-1)
-    add(ret,p)
+   if i>1 and mypat[8]>0 then
+	   local nxpat=makepat(mypat[2],pang+(i-1)*-mypat[5])
+	   for p in all(nxpat) do
+	    p.spd+=(i-1)*mypat[6]
+	    p.wait+=(i-1)*mypat[7]
+	    add(ret,p)
+	   end   
    end
   end
  elseif patype=="brst" then
