@@ -3,11 +3,11 @@ version 41
 __lua__
 -- todo
 ------------------
--- combine modifier
--- angle indicator
--- minimize
 -- bring it into the game
 -- bring it into brainedit
+
+-- shift?
+
 
 -- assumptions
 ------------------
@@ -154,6 +154,13 @@ function draw_pats()
  --enemy
  line(enspr.x-2,enspr.y-2,enspr.x+2,enspr.y+2,5)
  line(enspr.x-2,enspr.y+2,enspr.x+2,enspr.y-2,5)
+ 
+ local myang=0
+ if fireang==-99 then
+  myang=atan2(pspr.y-enspr.y,pspr.x-enspr.x)
+ end
+ line(enspr.x+sin(myang)*8,enspr.y+cos(myang)*8,
+      enspr.x+sin(myang)*12,enspr.y+cos(myang)*12,5)
  
  --player
  circ(pspr.x,pspr.y,3,5)
@@ -450,6 +457,14 @@ function drawobj(obj)
   msprc(obj.col,obj.x,obj.y)
  end
 end
+
+function copylist(org)
+ local ret={}
+ for k, v in pairs(org) do
+  ret[k]=v
+ end
+ return ret
+end
 -->8
 --i/o
 function export()
@@ -546,6 +561,14 @@ function refresh_pats()
 	  "spd :",
 	  "time:"
 
+	 }
+ elseif mypat[1]=="comb" then
+	 mycap={
+	  "src1:",
+	  "src2:",
+	  "src3:",
+	  "src4:",
+	  "src5:"
 	 } 
  else
   for i=2,#mypat do
@@ -676,6 +699,15 @@ function newpat(typ)
    0,
    5
   }
+ elseif typ=="comb" then
+  return {
+   "comb",
+   1,
+   0,
+   0,
+   0,
+   0
+  }
  else
   return {
    typ
@@ -764,55 +796,55 @@ function dobulq(en)
 end
 
 function makepat(pat,pang)
- local mypat=pats[pat]
- local patype=mypat[1]
- local ret={} 
+ local mypat,ret=pats[pat],{}
+ local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
  if patype=="base" then
   add(ret,{
    age=0,
    x=0,
    y=0,
    ang=pang,
-   spd=mypat[2],
-   ani=anilib[mypat[3]],
-   anis=mypat[4],
-   col=mypat[5],
+   spd=p2,
+   ani=anilib[p3],
+   anis=p4,
+   col=p5,
    wait=0
   })
  elseif patype=="some" then
-  if rnd()<mypat[3] then
-   ret=makepat(mypat[2],pang)
+  if rnd()<p3 then
+   ret=makepat(p3,pang)
   end
  elseif patype=="sprd" then
-  for i=mypat[3],mypat[4] do
-   local nxpat=makepat(mypat[2],pang+(i-1)*mypat[5])
-   for p in all(nxpat) do
-    p.spd+=(i-1)*mypat[6]
-    p.wait+=(i-1)*mypat[7]
+  for i=p3-1,p4-1 do
+   for p in all(makepat(p2,pang)) do
+    p.spd+=i*p6
+    p.wait+=i*p7
     add(ret,p)
-   end
-   if i>1 and mypat[8]>0 then
-	   local nxpat=makepat(mypat[2],pang+(i-1)*-mypat[5])
-	   for p in all(nxpat) do
-	    p.spd+=(i-1)*mypat[6]
-	    p.wait+=(i-1)*mypat[7]
-	    add(ret,p)
-	   end   
+    if i>0 and p8>0 then
+     local copyp=copylist(p)
+     copyp.ang+=i*-p5
+     add(ret,copyp)
+    end
+    p.ang+=i*p5
    end
   end
  elseif patype=="brst" then
-  for i=1,mypat[3] do
-   local nxpat=makepat(mypat[2],pang+spread(mypat[4]))
-   local rndw=flr(rnd(mypat[6]))
-   local rnds=rnd(mypat[5])
-
-   for p in all(nxpat) do
+  for i=1,p3 do
+   local rndw,rnds=flr(rnd(p6)),rnd(p5)
+   for p in all(makepat(p2,pang+spread(p4))) do
     p.wait+=rndw
     p.spd+=rnds
     add(ret,p)
    end
   end
-
+ elseif patype=="comb" then
+  for i=2,5 do
+   if mypat[i]>0 then
+    for p in all(makepat(mypat[i],pang)) do
+     add(ret,p)
+    end
+   end
+  end
  end
  
  return ret
