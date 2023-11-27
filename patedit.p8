@@ -5,7 +5,6 @@ __lua__
 ------------------
 -- spread
 -- - both sides / mirror?
--- rapid fire pat
 
 -- assumptions
 ------------------
@@ -14,9 +13,7 @@ __lua__
 
 -- pattern goals
 ------------------
--- 3b rapid fire
 -- 4 spread
--- 5 burst
 -- 6 spread of spreads
 -- 7 turning rapid fire (spiral)
 -- 8 chunker spread
@@ -56,7 +53,8 @@ function _init()
  
  enspr={
   x=64,
-  y=64
+  y=64,
+  bulq={}
  }
  
  buls={} 
@@ -65,6 +63,7 @@ function _init()
  
  selpat=1
 
+ fireang=-99
 end
 
 function _draw()
@@ -236,14 +235,24 @@ end
 --update
 
 function update_pats()
+
+ if key=="1" then
+  if fireang==-99 then
+   fireang=0
+  else
+   fireang=-99
+  end
+ end
+ 
  refresh_pats()
  
  enspr.x=mousex
  enspr.y=mousey
  
  if clkl and selpat<=#pats then
-  patshoot(enspr,selpat,-99)
- end 
+  patshoot(enspr,selpat,fireang)
+ end
+ dobulq(enspr)
  dobuls(buls)
  
  if btnp(⬆️) then
@@ -527,7 +536,21 @@ function refresh_pats()
 	  "num :",
 	  "ang :"
 	 } 
+ elseif mypat[1]=="rapd" then
+	 mycap={
+	  "src :",
+	  "num :",
+	  "time:"
+	 } 
+ elseif mypat[1]=="brst" then
+	 mycap={
+	  "src :",
+	  "num :",
+	  "ang :",
+	  "spd :",
+	  "time:"
 
+	 } 
  else
   for i=2,#mypat do
    add(mycap,"p"..i..":")
@@ -644,6 +667,22 @@ function newpat(typ)
    1,
    0.5
   }
+ elseif typ=="rapd" then
+  return {
+   "rapd",
+   1,
+   1,
+   2
+  }
+ elseif typ=="brst" then
+  return {
+   "brst",
+   1,
+   1,
+   0.5,
+   0.5,
+   5
+  }
  else
   return {
    typ
@@ -712,15 +751,23 @@ function patshoot(en,pat,pang)
  local mybuls=makepat(pat,pang)
 
  for b in all(mybuls) do
-  b.x+=en.x
-  b.y+=en.y
-  b.sx=sin(b.ang)*b.spd
-  b.sy=cos(b.ang)*b.spd
-  
-  add(buls,b)
+  add(en.bulq,b)
  end
- 
+end
 
+function dobulq(en)
+ for b in all(en.bulq) do
+  if b.wait<=0 then
+	  b.x+=en.x
+	  b.y+=en.y
+	  b.sx=sin(b.ang)*b.spd
+	  b.sy=cos(b.ang)*b.spd
+   add(buls,b)
+   del(en.bulq,b)
+  else
+   b.wait-=1
+  end
+ end
 end
 
 function makepat(pat,pang)
@@ -736,7 +783,8 @@ function makepat(pat,pang)
    spd=mypat[2],
    ani=anilib[mypat[3]],
    anis=mypat[4],
-   col=mypat[5]
+   col=mypat[5],
+   wait=0
   })
  elseif patype=="some" then
   if rnd()<mypat[3] then
@@ -749,11 +797,36 @@ function makepat(pat,pang)
     add(ret,p)
    end
   end
+ elseif patype=="rapd" then
+  for i=1,mypat[3] do
+   local nxpat=makepat(mypat[2],pang)
+   for p in all(nxpat) do
+    p.wait+=mypat[4]*(i-1)
+    add(ret,p)
+   end
+  end
+ elseif patype=="brst" then
+  for i=1,mypat[3] do
+   local nxpat=makepat(mypat[2],pang+spread(mypat[4]))
+   local rndw=flr(rnd(mypat[6]))
+   local rnds=rnd(mypat[5])
+
+   for p in all(nxpat) do
+    p.wait+=rndw
+    p.spd+=rnds
+    add(ret,p)
+   end
+  end
+
  end
  
  return ret
-
 end
+
+function spread(val)
+ return (rnd(2)-1)*val
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
