@@ -3,8 +3,10 @@ version 41
 __lua__
 --todo
 
--- goal
+-- path
 -------
+-- load trails in schedit
+-- show trails in schedit
 
 -- todo
 -------
@@ -16,6 +18,7 @@ function _init()
  --- customize here ---
  #include shmup_brains.txt
  #include shmup_brains_meta.txt
+ #include shmup_brains_trails.txt
  file="shmup_brains.txt"
  filem="shmup_brains_meta.txt"
  
@@ -26,6 +29,20 @@ function _init()
  #include shmup_anilib.txt
  #include shmup_pats.txt
  ----------------------
+ 
+ -- process trails --
+ for i=1,#trails do
+  local myt=trails[i]
+  for j=1,#myt do
+   myt[j]=split(myt[j],":")
+   if #myt[j]!=2 then
+    myt[j]={0,0}
+   end
+  end
+ end
+ 
+ 
+ -------------------
  debug={}
  msg={}
  
@@ -68,8 +85,8 @@ function _init()
  showtrails=false
  showui=true
  
- newtrails={}
- curtrails={}
+ newtrails=trails[1]
+ curtrails=trails[1]
  
  pspr={
   x=64,
@@ -178,8 +195,9 @@ function draw_brain()
  end
  
  if showtrails then
+  local selmeta=meta[selbrain]
   for t in all(curtrails) do
-   pset(t[1],t[2],11)
+   pset(t[1]+selmeta[2],t[2]+selmeta[3],11)
   end
  end
  
@@ -228,12 +246,6 @@ function drawmenu()
 		 for j=1,#menui[i] do
 		  local mymnui=menui[i][j]
 		  local c=mymnui.c or 13
-		  if i==cury and j==curx then
-		   c=7
-		   if _upd==upd_type then
-		    c=0
-		   end
-		  end 
 		  bgprint(mymnui.w,mymnui.x,mymnui.y,13)   
 		  bgprint(mymnui.txt,mymnui.x,mymnui.y,c) 
 		 end
@@ -293,7 +305,7 @@ function update_setup()
    local selmeta=meta[selbrain]
    
    if enlib[selmeta[1]]!=nil then
-    curtrails=newtrails
+    curtrails=trails[selbrain]
     reseten()
    end  
   end
@@ -334,12 +346,14 @@ function update_brain()
 	 if btnp(⬅️) then
 	  selbrain-=1
 	  enemies={}
-	  curtrails={}
+	  curtrails=trails[selbrain] or {}
+	  newtrails=curtrails
 	 end
 	 if btnp(➡️) then
 	  selbrain+=1
 	  enemies={}
-	  curtrails={}
+	  curtrails=trails[selbrain] or {}
+	  newtrails=curtrails
 	 end
 	 selbrain=mid(1,selbrain,#data+1)
  else
@@ -394,7 +408,8 @@ function update_brain()
   if #enemies==0 then
    local selmeta=meta[selbrain]
    if enlib[selmeta[1]]!=nil then
-    curtrails=newtrails
+    trails[selbrain]=newtrails
+    curtrails=trails[selbrain]
     reseten()
    end
   end
@@ -402,7 +417,13 @@ function update_brain()
   doenemies()
   
   if protag and t%5==0 then
-   add(newtrails,{protag.x,protag.y})
+   local selmeta=meta[selbrain]
+   if t<450 then
+    add(newtrails,{protag.x-selmeta[2],protag.y-selmeta[3]})
+   else
+    trails[selbrain]=newtrails
+    curtrails=newtrails
+   end
   end
 
  else
@@ -599,6 +620,23 @@ function export()
  s..="\""
  printh(s,filem,true)
 
+ local s="trails=split2d\""
+ for i=1,#data do
+  if i>1 then
+   s..="|"
+  end
+  if trails[i]!=nil then
+	  for j=1,#trails[i] do
+		  if j>1 then
+		   s..=","
+		  end
+		  s..=trails[i][j][1]..":"..trails[i][j][2]
+	  end
+  end
+ end
+ s..="\""
+ printh(s,"shmup_brains_trails.txt",true)
+ 
  add(msg,{txt="exported!",t=120})
  --debug[1]="exported!"
 end
@@ -744,6 +782,17 @@ function refresh_brain()
 			 c=15    
 		 }})
 	 end
+	end
+	
+	if showtrails then
+		add(menui,{{
+			txt="trs:"..(trails[selbrain] and #trails[selbrain] or "nil"),
+			w="      ",
+			cmd="",
+			x=102,
+			y=3,
+			c=3  
+		}})
 	end
 end
 
@@ -927,6 +976,11 @@ function dobrain(e,depth)
    end
   elseif cmd=="fir" then
    --fire
+   --- ★ robustness check ---
+   if par1<1 or par1>#pats then 
+    par1=1
+   end
+   ------------------
    patshoot(e,par1,par2)
   elseif cmd=="clo" then
    --clone
