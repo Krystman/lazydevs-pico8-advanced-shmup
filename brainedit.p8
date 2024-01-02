@@ -647,7 +647,7 @@ function export(auto)
  s..="\""
  printh(s,"shmup_brains_trails.txt",true)
  
- if auto then
+ if auto==true then
   add(msg,{txt="autosave",t=60}) 
  else
   add(msg,{txt="exported!",t=120})
@@ -1182,7 +1182,7 @@ function makepat(pat,pang)
   })
  elseif patype=="some" then
   if rnd()<p3 then
-   ret=makepat(p3,pang)
+   ret=makepat(p2,pang)
   end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do

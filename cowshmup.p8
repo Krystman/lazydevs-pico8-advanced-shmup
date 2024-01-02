@@ -10,7 +10,7 @@ __lua__
 --  - xscroll big pita 
 --  - enemy scrolling in sync with bg
 --  - merge splash system?
---  - maybe update splash and muzz in draw?
+--  - maybe update splash nd muzz in draw?
 --  - freeze / die / inviz overhaul
   
 function _init()
@@ -86,6 +86,17 @@ function startgame()
  _drw=drw_game
  
  music(0)
+ 
+ --★
+ 
+ --scroll=208
+ scroll=0
+ for i=1,#sched do
+  if sched[i][1]<scroll then
+   schedi=i+1
+  end
+ end
+ 
 end
 
 function _draw() 
@@ -405,6 +416,15 @@ function drawobj(obj)
   msprc(obj.col,obj.x,obj.y)
  end
 end
+
+function copylist(org)
+ local ret={}
+ for k, v in pairs(org) do
+  ret[k]=v
+ end
+ return ret
+end
+
 -->8
 --gameplay
 
@@ -499,8 +519,7 @@ function doenemies()
   end
   
   if e.staged then
-   dobulq(e)
-  end
+   dobulq(e)  end
   
  end
 end
@@ -626,7 +645,7 @@ function makepat(pat,pang)
   })
  elseif patype=="some" then
   if rnd()<p3 then
-   ret=makepat(p3,pang)
+   ret=makepat(p2,pang)
   end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do

@@ -19,7 +19,7 @@ function _init()
  #include shmup_myspr.txt
  #include shmup_brains_trails.txt
  ----------------------
-
+ 
  -- process trails --
  for i=1,#trails do
   local myt=trails[i]
@@ -498,7 +498,7 @@ function update_map()
     selsched=en.sched
     mousehit=true
     if clkl then
-     dropx=en.x+xscroll
+     dropx=min(en.x+xscroll,128-6*4)
      dropy=en.y
      
      refresh_drop()
@@ -772,7 +772,7 @@ function export(auto)
  
  s..="\""
  printh(s,file,true)
- if auto then
+ if auto==true then
   add(msg,{txt="autosave",t=60}) 
  else
   add(msg,{txt="exported!",t=120})

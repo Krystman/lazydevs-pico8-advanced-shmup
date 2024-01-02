@@ -347,7 +347,7 @@ function export(auto)
  
  s..="\""
  printh(s,file,true)
- if auto then
+ if auto==true then
   add(msg,{txt="autosave",t=60}) 
  else
   add(msg,{txt="exported!",t=120})
