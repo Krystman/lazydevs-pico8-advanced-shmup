@@ -10,6 +10,9 @@ __lua__
 -- how do i fire multiple bullets
 
 function _init()
+ autosave=true
+ dirty=false
+ 
  --- customize here ---
  #include shmup_brains.txt
  #include shmup_brains_meta.txt
@@ -95,7 +98,12 @@ function _draw()
  _drw()
  
  if #msg>0 then
-  bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  if msg[1].txt=="autosave" then
+   rectfill(119,119,125,125,0)
+   print("\^:0d1d11111f000000",120,120,sin(time()*3)>-0.3 and 6 or 5) 
+  else
+   bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  end
   msg[1].t-=1
   if msg[1].t<=0 then
    deli(msg,1)
@@ -118,6 +126,13 @@ function _update60()
  scroll+=0.2
  scroll=scroll%16
  _upd()
+ 
+ if time()%2==0 then
+  if autosave and dirty then
+   export(true)
+   dirty=false
+  end
+ end
 end
 
 function dokeys()
@@ -383,6 +398,7 @@ function update_brain()
    add(data[mymnu.cmdb],0,mymnu.cmdi+2)
    cury+=1
    curx=1
+   dirty=true
   elseif mymnu.cmd=="setup" then
    refresh_setup()
    _upd=update_setup
@@ -394,6 +410,7 @@ function update_brain()
    add(meta,{
     1,64,10
    })
+   dirty=true
   end
   return 
  end
@@ -581,7 +598,7 @@ function spread(val)
 end
 -->8
 --i/o
-function export()
+function export(auto)
  local s=arrname.."=split2d\""
  
  for i=1,#data do
@@ -630,8 +647,12 @@ function export()
  s..="\""
  printh(s,"shmup_brains_trails.txt",true)
  
- add(msg,{txt="exported!",t=120})
- --debug[1]="exported!"
+ if auto then
+  add(msg,{txt="autosave",t=60}) 
+ else
+  add(msg,{txt="exported!",t=120})
+ end
+  --debug[1]="exported!"
 end
 -->8
 --ui
@@ -875,7 +896,7 @@ function enter_brain()
     deli(meta,mymnu.cmdb)
     add(msg,{txt="brain deleted!",t=120})
    end
-   
+   dirty=true
    return
   else 
    local found=false 
@@ -887,6 +908,7 @@ function enter_brain()
    if not found then
     typeval="wai"
    end
+   dirty=true
   end
  else
   --editing parameters
@@ -896,7 +918,7 @@ function enter_brain()
   end
  end
  data[mymnu.cmdb][mymnu.cmdi]=typeval
-
+ dirty=true
 end
 
 function enter_meta()
@@ -910,7 +932,7 @@ function enter_meta()
   typeval=0
  end
  meta[selbrain][mymnu.cmdy]=typeval
-
+ dirty=true
 end
 -->8
 --enemy

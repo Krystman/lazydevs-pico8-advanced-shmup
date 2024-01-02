@@ -6,6 +6,9 @@ __lua__
 -- -visual sprite selection
 
 function _init()
+ autosave=true
+ dirty=false
+ 
  --- customize here ---
  #include shmup_anilib.txt
  file="shmup_anilib.txt"
@@ -35,7 +38,12 @@ function _draw()
  _drw()
  
  if #msg>0 then
-  bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  if msg[1].txt=="autosave" then
+   rectfill(119,119,125,125,0)
+   print("\^:0d1d11111f000000",120,120,sin(time()*3)>-0.3 and 6 or 5) 
+  else
+   bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  end
   msg[1].t-=1
   if msg[1].t<=0 then
    deli(msg,1)
@@ -55,6 +63,13 @@ function _update60()
  mscroll=stat(36)
  
  _upd()
+ 
+ if time()%2==0 then
+  if autosave and dirty then
+   export(true)
+   dirty=false
+  end
+ end
 end
 
 function dokeys()
@@ -217,9 +232,11 @@ function update_table()
    typetxt=tostr(mymnu.txt)
    typecur=#typetxt+1
   elseif mymnu.cmd=="newline" then
-   add(data,{0})  
+   add(data,{0}) 
+   dirty=true 
   elseif mymnu.cmd=="newcell" then
    add(data[mymnu.cmdy],0)
+   dirty=true
   end
  end
 end
@@ -239,6 +256,7 @@ function upd_type()
       deli(data,mymnu.cmdy)
      end
      _upd=update_table
+     dirty=true
      return
     end  
     typeval=0
@@ -246,6 +264,7 @@ function upd_type()
    
    data[mymnu.cmdy][mymnu.cmdx]=typeval
    _upd=update_table
+   dirty=true
    return
   elseif key=="\b" then
    --backspace
@@ -295,7 +314,7 @@ function split2d(s)
 end
 -->8
 --i/o
-function export()
+function export(auto)
  local s=arrname.."=split2d\""
  
  for i=1,#data do
@@ -312,8 +331,12 @@ function export()
  
  s..="\""
  printh(s,file,true)
- add(msg,{txt="exported!",t=120})
- --debug[1]="exported!"
+ if auto then
+  add(msg,{txt="autosave",t=60}) 
+ else
+  add(msg,{txt="exported!",t=120})
+ end
+  --debug[1]="exported!"
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

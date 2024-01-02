@@ -16,6 +16,9 @@ __lua__
 
 
 function _init()
+ autosave=true
+ dirty=false
+ 
  --- customize here ---
  #include shmup_pats.txt
  file="shmup_pats.txt"
@@ -66,7 +69,12 @@ function _draw()
  _drw()
  
  if #msg>0 then
-  bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  if msg[1].txt=="autosave" then
+   rectfill(119,119,125,125,0)
+   print("\^:0d1d11111f000000",120,120,sin(time()*3)>-0.3 and 6 or 5) 
+  else
+   bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  end
   msg[1].t-=1
   if msg[1].t<=0 then
    deli(msg,1)
@@ -89,6 +97,12 @@ function _update60()
  scroll=scroll%16
  
  _upd()
+ if time()%2==0 then
+  if autosave and dirty then
+   export(true)
+   dirty=false
+  end
+ end
 end
 
 function dokeys()
@@ -295,11 +309,12 @@ function update_pats()
    return
   elseif mymnu.cmd=="newpat" then
    add(pats,newpat("base"))
+   dirty=true
    return
   elseif mymnu.cmd=="delpat" then
    deli(pats,selpat)
    add(msg,{txt="pat deleted!",t=120})
-
+   dirty=true
   end
  end
  
@@ -467,7 +482,7 @@ function copylist(org)
 end
 -->8
 --i/o
-function export()
+function export(auto)
  local s=arrname.."=split2d\""
  
  for i=1,#data do
@@ -484,7 +499,11 @@ function export()
  
  s..="\""
  printh(s,file,true)
- add(msg,{txt="exported!",t=120})
+ if auto then
+  add(msg,{txt="autosave",t=60}) 
+ else
+  add(msg,{txt="exported!",t=120})
+ end
  --debug[1]="exported!"
 end
 -->8
@@ -733,6 +752,7 @@ function enter_pat()
   data[mymnu.cmdy][mymnu.cmdx]=tonum(typeval)
  end
  _upd=update_pats
+ dirty=true
 end
 
 function enter_table()

@@ -2,14 +2,12 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 --todo
--- autosave
--- prevent scrolling after exiting to list
--- copy?
--- nudge values
 -- direct spritemap selection
 
 function _init()
-
+ autosave=true
+ dirty=false
+ 
  --- customize here ---
  #include shmup_myspr.txt
  #include shmup_myspr_meta.txt
@@ -49,7 +47,12 @@ function _draw()
  _drw()
  
  if #msg>0 then
-  bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  if msg[1].txt=="autosave" then
+   rectfill(119,119,125,125,0)
+   print("\^:0d1d11111f000000",120,120,sin(time()*3)>-0.3 and 6 or 5) 
+  else
+   bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  end
   msg[1].t-=1
   if msg[1].t<=0 then
    deli(msg,1)
@@ -69,6 +72,13 @@ function _update60()
  mscroll=stat(36)
  
  _upd()
+ 
+ if time()%2==0 then
+  if autosave and dirty then
+   export(true)
+   dirty=false
+  end
+ end
 end
 
 function dokeys()
@@ -206,10 +216,22 @@ function update_edit()
    selspr+=1
   end
   selspr=mid(1,selspr,#data)	
- elseif cury==11 then
+ elseif cury>=11 then
   curx=1
  else
   curx=2
+  if cury<=7 then
+   --nudge
+	  if btnp(⬅️) then
+	   local mymnu=menu[cury][curx]
+	   data[mymnu.cmdy][mymnu.cmdx]-=1
+	   dirty=true
+	  elseif btnp(➡️) then
+	   local mymnu=menu[cury][curx]
+	   data[mymnu.cmdy][mymnu.cmdx]+=1
+	   dirty=true
+	  end  
+  end
  end
  
  if btnp(🅾️) then
@@ -218,8 +240,8 @@ function update_edit()
   refresh_list()
   cury=selspr
   curx=1
-  scrolly=0
   scrollx=0
+  scrolly=oldscroll
   return
  end
  
@@ -260,6 +282,23 @@ function update_edit()
 			curx=1
 			scrolly=0
 			scrollx=0
+			dirty=true
+			return
+  elseif mymnu.cmd=="copyspr" then
+			local newspr=copylist(data[selspr])
+			local newmet=copylist(meta[selspr])
+
+			add(data,newspr)
+			add(meta,newmet)
+			_drw=draw_list
+			_upd=update_list
+			refresh_list()
+			selspr=#data
+			cury=selspr
+			curx=1
+			scrolly=0
+			scrollx=0
+			dirty=true
 			return   
   end
  end
@@ -301,7 +340,9 @@ function update_list()
   if mymnu.cmd=="newline" then
    add(data,{0,0,0,0,0,0})
    add(meta,{"new",0})
+   dirty=true
   elseif mymnu.cmd=="editspr" then
+   oldscroll=scrolly
    selspr=mymnu.cmdy
    _upd=update_edit
    _drw=draw_edit
@@ -495,9 +536,17 @@ function spacejam(n)
  end
  return ret
 end
+
+function copylist(org)
+ local ret={}
+ for k, v in pairs(org) do
+  ret[k]=v
+ end
+ return ret
+end
 -->8
 --i/o
-function export()
+function export(auto)
  local s=arrname.."=split2d\""
  
  for i=1,#data do
@@ -530,7 +579,11 @@ function export()
  s..="\""
  printh(s,filem,true)
  
- add(msg,{txt="exported!",t=120})
+ if auto then
+  add(msg,{txt="autosave",t=60}) 
+ else
+  add(msg,{txt="exported!",t=120})
+ end
  --debug[1]="exported!"
 end
 -->8
@@ -590,13 +643,21 @@ function refresh_edit()
 		 y=4+9*7
 		}
 	})
- 
+
+ add(menu,{{
+	 txt="copy",
+	 w="",
+	 cmd="copyspr",
+	 x=2,
+	 y=5+10*7
+ }})
+  
  add(menu,{{
 	 txt="delete",
 	 w="",
 	 cmd="delspr",
 	 x=2,
-	 y=5+10*7
+	 y=6+11*7
  }})
 end
 
@@ -723,6 +784,7 @@ function enter_edit()
 
  _upd=update_edit
  refresh_edit()
+ dirty=true
 end
 
 function enter_editcol()
@@ -738,6 +800,7 @@ function enter_editcol()
  
  _upd=update_edit
  refresh_edit()
+ dirty=true
 end
 
 function enter_editname()
@@ -751,6 +814,7 @@ function enter_editname()
  
  _upd=update_edit
  refresh_edit()
+ dirty=true
 end
 
 function filter(s)

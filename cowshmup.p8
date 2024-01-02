@@ -38,6 +38,11 @@ function _init()
  _upd=upd_menu
  _drw=drw_menu
  
+ screen={
+  x=0,
+  y=0,
+  col=split("0,0,144,128,0,0")
+ }
  --★
  --coldebug=true
  
@@ -71,7 +76,7 @@ function startgame()
   y=0,
   age=0,
   ani={3},
-  col=28
+  col=myspr[28]
  }
  invul=0
  inviz=0
@@ -173,7 +178,7 @@ function drw_game()
  end
  
  for s in all(buls) do
-  drawobj(s) 
+  drawobj(s)
   --mspr(cyc(s.age,s.ani,s.anis),s.x,s.y)
  end
  
@@ -366,10 +371,9 @@ function split2d(s)
  return arr
 end
 
-function col2(oa,ob)
- local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(myspr[oa.col])
- local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(myspr[ob.col])
- 
+function col2(oa,ob) 
+ local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(oa.col)
+ local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(ob.col)
  local a_left=flr(oa.x)-_aox
  local a_top=flr(oa.y)-_aoy
  local a_right=a_left+_aw-1
@@ -379,25 +383,6 @@ function col2(oa,ob)
  local b_top=flr(ob.y)-_boy
  local b_right=b_left+_bw-1
  local b_bottom=b_top+_bh-1
-
- if a_top>b_bottom then return false end
- if b_top>a_bottom then return false end
- if a_left>b_right then return false end
- if b_left>a_right then return false end
- 
- return true
-end
-
-function col(x1,y1,w1,h1,x2,y2,w2,h2)
- local a_left=x1
- local a_top=y1
- local a_right=x1+w1-1
- local a_bottom=y1+h1-1
- 
- local b_left=x2
- local b_top=y2
- local b_right=x2+w2-1
- local b_bottom=y2+h2-1
 
  if a_top>b_bottom then return false end
  if b_top>a_bottom then return false end
@@ -451,7 +436,7 @@ function spawnen(eni,enx,eny)
   age=0,
   flash=0,
   hp=en[4],
-  col=en[5],
+  col=myspr[en[5]],
   wait=0,
   dist=0,
   bulq={}
@@ -505,9 +490,15 @@ function doenemies()
   
   e.age+=1
   
-  if not onscreen(e) then
-   --del(enemies,e)
-  else  
+  local oscr=col2(e,screen)
+  
+  if e.staged and not oscr then
+   del(enemies,e)
+  else
+   e.staged=oscr
+  end
+  
+  if e.staged then
    dobulq(e)
   end
   
@@ -577,13 +568,12 @@ function dobrain(e,depth)
 end
 
 function dobuls(arr)
- for s in all(arr) do
-  s.age+=1
-  s.x+=s.sx
-  s.y+=s.sy
-    
-  if s.y<-16 or s.y>130 then
-   del(arr,s)
+ for bl in all(arr) do
+  bl.age+=1
+  bl.x+=bl.sx
+  bl.y+=bl.sy
+  if not col2(bl,screen) then
+   del(arr,bl)
   end
  end
 end
@@ -604,7 +594,7 @@ function shoot()
    ani=anilib[3],
    anis=2,
    age=(t\2)%3+1,
-   col=29
+   col=myspr[29]
   })
 	 add(parts,{
 	   draw=sprite,
@@ -619,14 +609,6 @@ function shoot()
  sfx(0,3)
 end
 
-function onscreen(obj)
- if obj.x<-8 then return false end
- if obj.y<-8 then return false end
- if obj.x>136 then return false end
- if obj.y>136 then return false end 
- return true
-end
-
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
  local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
@@ -639,7 +621,7 @@ function makepat(pat,pang)
    spd=p2,
    ani=anilib[p3],
    anis=p4,
-   col=p5,
+   col=myspr[p5],
    wait=0
   })
  elseif patype=="some" then
@@ -717,18 +699,6 @@ function dobulq(en)
 	 })
 	end
 	 
-end
-
-function dobuls(arr)
- for s in all(arr) do
-  s.age+=1
-  s.x+=s.sx
-  s.y+=s.sy
-    
-  if s.y<-16 or s.y>130 then
-   del(arr,s)
-  end
- end
 end
 -->8
 --particles
