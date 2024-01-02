@@ -5,6 +5,9 @@ __lua__
 -------
 
 function _init()
+ autosave=true
+ dirty=false
+ 
  --- customize here ---
  #include shmup_sched.txt
  file="shmup_sched.txt"
@@ -53,13 +56,32 @@ function _init()
  
  selsched=nil
  t=0
+ 
+ hgrid={
+  78,--bridge
+  154,--anthem
+  308,--melody
+  459,--danger
+  614,--bridge2
+  690, --anthem 2
+  842, --melody 2
+  994, --danger 2
+  1148, --bridge 3
+  1224, --anthem 3
+  1377 --meldoy 3
+ }
 end
 
 function _draw()
  _drw()
  
  if #msg>0 then
-  bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  if msg[1].txt=="autosave" then
+   rectfill(119,119,125,125,0)
+   print("\^:0d1d11111f000000",120,120,sin(time()*3)>-0.3 and 6 or 5) 
+  else
+   bgprint(msg[1].txt,64-#msg[1].txt*2,80,14)
+  end
   msg[1].t-=1
   if msg[1].t<=0 then
    deli(msg,1)
@@ -81,6 +103,13 @@ function _update60()
  mscroll=stat(36)
  
  _upd()
+ 
+ if time()%2==0 then
+  if autosave and dirty then
+   export(true)
+   dirty=false
+  end
+ end
 end
 
 function dokeys()
@@ -246,6 +275,16 @@ function drawbg()
  end
  
  camera(-xscroll,0)
+ fillp(▤)
+ line(64+8,0,64+8,128,13)
+ line(15,0,15,128,13)
+ line(128,0,128,128,13)
+ fillp(▥)
+ for g in all(hgrid) do
+  local gy=-g+scroll
+  line(-8,gy,128+16,gy,13)
+ end
+ fillp()
  genens()
  
  -- draw enemies
@@ -270,7 +309,7 @@ function drawbg()
    rect(en.x-8,en.y-8,en.x+9,en.y+9,rnd({6,7}))
    drawtrail(en)
   end
-  print(en.age,en.x,en.y,7)
+  --print(en.age,en.x,en.y,7)
   --drawtrail(en)
  end
  
@@ -331,6 +370,7 @@ function update_move()
  if btnp(🅾️) or btnp(❎) or clkr then
   _drw=draw_map
   _upd=update_map
+  dirty=true
   refresh_map() 
   return 
  end
@@ -713,7 +753,7 @@ function col3(ob)
 end
 -->8
 --i/o
-function export()
+function export(auto)
  sortsched()
  
  local s=arrname.."=split2d\""
@@ -732,7 +772,11 @@ function export()
  
  s..="\""
  printh(s,file,true)
- add(msg,{txt="exported!",t=120})
+ if auto then
+  add(msg,{txt="autosave",t=60}) 
+ else
+  add(msg,{txt="exported!",t=120})
+ end
  --debug[1]="exported!"
 end
 -->8
@@ -919,6 +963,7 @@ function dobutton(b)
 	 sch[3]=64
 	 sch[4]=8
 	 add(sched,sch)
+	 dirty=true
  elseif b.cmd=="editen" then
   
   --dropx=mid(2,b.cmdsch[3],128-25)
@@ -939,11 +984,13 @@ function dobutton(b)
    sched[2]+=1
   end
   sched[2]=mid(1,sched[2],#enlib)
+  dirty=true
  elseif b.cmd=="delen" then
   del(sched,b.cmdsch)
   _drw=draw_map
   _upd=update_map
-  refresh_map() 
+  refresh_map()
+  dirty=true
  elseif b.cmd=="copyen" then
   local newsched={
    b.cmdsch[1],
