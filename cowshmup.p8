@@ -3,9 +3,10 @@ version 41
 __lua__
 
 -- main todo
---  - maybe doenemy overhaul
---  - brain: enemy goto location command
 --  - ground enemies
+--  - pattern
+--  - - bullet speed manip
+--  - - merge
 
 function _init()
  t=0
@@ -468,41 +469,42 @@ function doenemies()
    dobrain(e,1)
   end
   
-  if e.flw then
-   local diff=atan2(pspr.y-e.y,pspr.x-e.x)-e.ang   
-   if abs(diff)>0.5 then
-    diff-=sgn(diff)
-   end
-   
-   e.ang+=mid(-e.flws,diff,e.flws)
-   
-   if dist(pspr.x,pspr.y,e.x,e.y)<25 then
-    e.flw=false
-   end
-   e.ang=e.ang%1
+  if e.movx then
+   --★
+   e.x+=(e.movx-e.x)/25
+   e.y+=(e.movy-e.y)/25
+   if dist(e.x,e.y,e.movx,e.movy)<1 then
+	   e.x,e.y=e.movx,e.movy
+	   e.movx=nil
+	  end
+  else
+	  if e.flw then
+	   e.adrt=atan2(pspr.y-e.y,pspr.x-e.x)
+	   e.flw=dist(pspr.x,pspr.y,e.x,e.y)>25
+	  end
+	  
+	  if e.aspt then
+	   e.spd+=mid(-e.asps,e.aspt-e.spd,e.asps)
+	   if e.spd==e.aspt then
+	    e.aspt=nil
+	   end
+	  end
+	  
+	  if e.adrt then
+	   if abs(e.adrt-e.ang)>0.5 then
+	    e.adrt-=sgn(e.adrt-e.ang)
+	   end
+	   e.ang+=mid(-e.adrs,e.adrt-e.ang,e.adrs)
+	   if e.ang==e.adrt then
+	    e.adrt=nil
+	   end
+	  end  
+   e.sx=sin(e.ang)*e.spd
+   e.sy=cos(e.ang)*e.spd
+   e.dist=max(0,e.dist-abs(e.spd))
+   e.x+=e.sx
+   e.y+=e.sy
   end
-  
-  if e.aspt then
-   e.spd+=e.asps
-   if abs(e.aspt-e.spd)<abs(e.asps) then
-    e.spd=e.aspt
-    e.aspt=nil
-   end
-  end
-  if e.adrt then
-   e.ang+=e.adrs
-   if abs(e.adrt-e.ang)<abs(e.adrs) then
-    e.ang=e.adrt
-    e.adrt=nil
-   end
-  end
-  
-  e.sx=sin(e.ang)*e.spd
-  e.sy=cos(e.ang)*e.spd
-  e.dist=max(0,e.dist-abs(e.spd))
-  
-  e.x+=e.sx
-  e.y+=e.sy
   
   e.age+=1
   
@@ -573,8 +575,12 @@ function dobrain(e,depth)
   elseif cmd=="flw" then
    --follow
    e.flw=true
-   e.flws=par1
+   e.adrs=par1
    --par2??
+  elseif cmd=="mov" then
+   --moveto
+   e.movx=par1
+   e.movy=par2
   end
   e.bri+=3
   if quit then return end
