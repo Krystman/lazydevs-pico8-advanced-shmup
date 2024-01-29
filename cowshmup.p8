@@ -2,17 +2,11 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
--- goals
+-- main todo
+--  - maybe doenemy overhaul
+--  - brain: enemy goto location command
+--  - ground enemies
 
--- smol things
---  - better onscreen function
---  - anilib in drawobj
---  - xscroll big pita 
---  - enemy scrolling in sync with bg
---  - merge splash system?
---  - maybe update splash nd muzz in draw?
---  - freeze / die / inviz overhaul
-  
 function _init()
  t=0
  debug={}
@@ -440,7 +434,8 @@ function die2()
 end
 
 function spawnen(eni,enx,eny,enb)
- local en=enlib[eni]
+ 
+ local en=enlib[abs(eni)]
  
  add(enemies,{
   x=enx,
@@ -453,6 +448,7 @@ function spawnen(eni,enx,eny,enb)
   spd=0,
   brain=enb or en[3],
   bri=1,
+  mirr=sgn(eni),
   age=0,
   flash=0,
   hp=en[4],
@@ -533,7 +529,7 @@ function dobrain(e,depth)
   local par2=mybra[e.bri+2]
   if cmd=="hed" then
    --set heading / speed
-   e.ang=par1
+   e.ang=par1*e.mirr
    e.spd=par2
    e.aspt=nil
    e.flw=false
@@ -548,8 +544,8 @@ function dobrain(e,depth)
    e.asps=par2
   elseif cmd=="adr" then
    --animate direction
-   e.adrt=par1
-   e.adrs=par2
+   e.adrt=par1*e.mirr
+   e.adrs=par2*e.mirr
    e.flw=false
   elseif cmd=="got" then
    --goto
@@ -565,7 +561,7 @@ function dobrain(e,depth)
    end
   elseif cmd=="fir" then
    --fire
-   patshoot(e,par1,par2)
+   patshoot(e,par1,par2*e.mirr)
   elseif cmd=="clo" then
    --clone
    for i=1,par1 do
@@ -685,7 +681,7 @@ end
 
 function patshoot(en,pat,pang)
  
- if pang==-99 then
+ if abs(pang)==99 then
   pang=atan2(pspr.y-en.y,pspr.x-en.x)
  end
 

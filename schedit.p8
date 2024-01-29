@@ -3,7 +3,7 @@ version 41
 __lua__
 -- todo
  -- x brain decision on spawn level
- --   enemy mirroring  
+ -- x enemy mirroring  
 
 function _init()
  autosave=true
@@ -322,7 +322,7 @@ function drawtrail(en)
  
  local curtrails=trails[en.brain]
  for t in all(curtrails) do
-  local enx=t[1]+mysched[3]
+  local enx=t[1]*en.mirr+mysched[3]
   local eny=t[2]+mysched[4]
   
   --mspr(en.s,enx,eny)
@@ -398,6 +398,8 @@ function update_drop()
  
  if menu[cury][curx].cmd=="entype" then
   local sched=menu[cury][curx].cmdsch
+  local mirr=sgn(sched[2])
+  sched[2]=abs(sched[2])
   if btnp(⬅️) then
    sched[2]-=1
    dirty=true
@@ -407,8 +409,11 @@ function update_drop()
    dirty=true
   end
   sched[2]=mid(1,sched[2],#enlib)
+  sched[2]=sched[2]*mirr
  elseif menu[cury][curx].cmd=="enbrain" then
   local sched=menu[cury][curx].cmdsch
+  local mirr=sgn(sched[2])
+  sched[2]=abs(sched[2])
   local myen=enlib[sched[2]]
   local brn=sched[5] or myen[3]
 
@@ -427,7 +432,7 @@ function update_drop()
   else
    sched[5]=brn
   end
-  
+  sched[2]=sched[2]*mirr
  else
 	 if btnp(❎) then
 	  dobutton(menu[cury][curx])
@@ -813,7 +818,7 @@ end
 function refresh_drop()
  menu={}
  add(menu,{{
-	 txt="< "..tostrn(selsched[2],2,"0").." >",
+	 txt="< "..tostrn(abs(selsched[2]),2,"0").." >",
 	 w="      ",
 	 cmd="entype",
 	 cmdsch=selsched,
@@ -822,7 +827,7 @@ function refresh_drop()
 	 c=13
  }})
  
- local myen=enlib[selsched[2]]
+ local myen=enlib[abs(selsched[2])]
  local brn=selsched[5] or myen[3]
  
  add(menu,{{
@@ -834,22 +839,34 @@ function refresh_drop()
 	 y=dropy+6,
 	 c=13
  }})
+ 
+ local mirrt=selsched[2]<0 and "mirror" or "normal"
  add(menu,{{
-	 txt="move",
+	 txt=mirrt,
 	 w="      ",
-	 cmd="moveen",
+	 cmd="mirren",
 	 cmdsch=selsched,
 	 x=dropx,
 	 y=dropy+12,
 	 c=13
  }})
  add(menu,{{
+	 txt="move",
+	 w="      ",
+	 cmd="moveen",
+	 cmdsch=selsched,
+	 x=dropx,
+	 y=dropy+18,
+	 c=13
+ }})
+
+ add(menu,{{
 	 txt="copy",
 	 w="      ",
 	 cmd="copyen",
 	 cmdsch=selsched,
 	 x=dropx,
-	 y=dropy+18,
+	 y=dropy+24,
 	 c=13
  }}) 
  
@@ -859,7 +876,7 @@ function refresh_drop()
 	 cmd="delen",
 	 cmdsch=selsched,
 	 x=dropx,
-	 y=dropy+24,
+	 y=dropy+30,
 	 c=13
  }}) 
 
@@ -913,7 +930,8 @@ function genens()
  for sch in all(sched) do
  
   if sch[1]<=scroll then
-	  local en=enlib[sch[2]]
+   local mirr=sgn(sch[2])
+	  local en=enlib[abs(sch[2])]
 	  local brn=sch[5] or en[3]
    local curtrails=trails[brn]
    local enage=(scroll-sch[1])
@@ -922,7 +940,7 @@ function genens()
    if trailage<=#curtrails then
 
 		  local ani=anilib[en[1] ]   
-		  local schx=sch[3]+curtrails[trailage][1]
+		  local schx=sch[3]+(curtrails[trailage][1]*mirr)
 		  local schy=sch[4]+curtrails[trailage][2]
 	
 		  --local schx=sch[3]
@@ -935,7 +953,8 @@ function genens()
 		   sched=sch,
 		   col=en[5],
 		   brain=en[3],
-		   age=enage
+		   age=enage,
+		   mirr=mirr
 		  })
 	  end
   end
@@ -1002,6 +1021,10 @@ function dobutton(b)
 	 sch[4]=8
 	 add(sched,sch)
 	 dirty=true
+	elseif b.cmd=="mirren" then
+	 local sched=b.cmdsch
+	 sched[2]=-sched[2]
+	 dirty=true
  elseif b.cmd=="editen" then
   
   --dropx=mid(2,b.cmdsch[3],128-25)
@@ -1016,16 +1039,22 @@ function dobutton(b)
  elseif b.cmd=="entype" then
   local cx=mousex-dropx
   local sched=b.cmdsch
+  local mirr=sgn(sched[2])
+  sched[2]=abs(sched[2])
+
   if cx<=12 then
    sched[2]-=1
   else
    sched[2]+=1
   end
   sched[2]=mid(1,sched[2],#enlib)
+  sched[2]=sched[2]*mirr
   dirty=true
  elseif b.cmd=="enbrain" then
   local cx=mousex-dropx
   local sched=b.cmdsch
+  local mirr=sgn(sched[2])
+  sched[2]=abs(sched[2])
   local myen=enlib[sched[2]]
   local brn=sched[5] or myen[3]
 
@@ -1040,6 +1069,7 @@ function dobutton(b)
   else
    sched[5]=brn
   end
+  sched[2]=sched[2]*mirr
   dirty=true
  elseif b.cmd=="delen" then
   del(sched,b.cmdsch)

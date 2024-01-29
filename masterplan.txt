@@ -215,6 +215,7 @@ FIFTH GOAL: Final Fixes
   - Hover effect / Ground shadow
   - Bullet cancelling
   - Bullets not from center of sprite
+  - freeze / die / inviz overhaul
 
 - Design Questions (HARD)
   - Special Ability? Bomb?

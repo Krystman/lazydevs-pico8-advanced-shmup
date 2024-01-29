@@ -15,6 +15,13 @@ Enemy Data
 4 HP
 5 Col
 
+Spawn/Sched Data
+1 Time
+2 Enemy Type
+3 X
+4 Y
+5 Brain Override
+
 Cols
 Shot: 29
 Enemy: 30
