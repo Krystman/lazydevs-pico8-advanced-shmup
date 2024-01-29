@@ -3,8 +3,6 @@ version 41
 __lua__
 -- todo
 ------------------
--- burst collapsed into spread
--- shift?
 
 
 -- assumptions
@@ -297,7 +295,7 @@ function update_pats()
   selpat=mid(1,selpat,#pats+1)
  elseif cury==2 then
   curx=1
- elseif cury==#menu then
+ elseif cury==#menu or cury==#menu-1 then
   curx=1
  else
 	 curx=2
@@ -318,6 +316,10 @@ function update_pats()
   elseif mymnu.cmd=="delpat" then
    deli(pats,selpat)
    add(msg,{txt="pat deleted!",t=120})
+   dirty=true
+  elseif mymnu.cmd=="copypat" then
+   add(pats,copylist(pats[selpat]))
+   selpat=#pats
    dirty=true
   end
  end
@@ -618,12 +620,24 @@ function refresh_pats()
  
 	add(menu,{
 	 {
+	  txt="copy",
+	  w="    ",
+	  cmd="copypat",
+	  cmdy=selpat,
+	  x=4,
+	  y=6+#mypat*7+9,
+	  c=13  
+		}
+	})
+	
+	add(menu,{
+	 {
 	  txt="delete",
 	  w="      ",
 	  cmd="delpat",
 	  cmdy=selpat,
 	  x=4,
-	  y=6+#mypat*7+9,
+	  y=6+#mypat*7+17,
 	  c=13  
 		}
 	})

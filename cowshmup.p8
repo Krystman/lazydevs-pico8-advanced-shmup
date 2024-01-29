@@ -532,7 +532,8 @@ function doenemies()
   end
   
   if e.staged then
-   dobulq(e)  end
+   dobulq(e)  
+  end
   
  end
 end

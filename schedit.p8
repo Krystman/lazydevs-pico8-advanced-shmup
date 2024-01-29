@@ -71,6 +71,11 @@ function _init()
   1224, --anthem 3
   1377 --meldoy 3
  }
+ 
+ undox=0
+ undoy=0
+ undot=0
+ 
 end
 
 function _draw()
@@ -158,7 +163,9 @@ end
 
 function draw_move()
  drawbg()
-
+ 
+ local offx,offy=calcoffset(selsched)
+ pset(undox+offx+xscroll,undoy+offy,rnd({5,6,7}))
  bgprint("x:"..selsched[3].." y:"..selsched[4].." scroll:"..selsched[1],20,120,13)
  drawmenu()
  
@@ -190,7 +197,8 @@ function draw_map()
    local s=""
    local uix=26
    for j=1,#ens do
-    print(tostrn(ens[j][2],2,"0"),uix,i*6,7)
+    local brn=ens[j][5] or enlib[abs(ens[j][2])][3]
+    print(tostrn(brn,2,"0"),uix,i*6,7)
     uix+=10
    end
   end
@@ -364,17 +372,28 @@ function update_move()
  
  
  if clkl then
-  selsched[3]=mousex-xscroll
-  selsched[4]=mousey
+  local offx,offy=calcoffset(selsched)
+  
+  selsched[3]=mousex-xscroll-offx
+  selsched[4]=mousey-offy
  end
  
- if btnp(🅾️) or btnp(❎) or clkr then
+ if btnp(❎)  then
   _drw=draw_map
   _upd=update_map
   dirty=true
   refresh_map() 
   return 
+ elseif btnp(🅾️) or clkr then
+  selsched[3]=undox
+  selsched[4]=undoy
+  selsched[1]=undot
+  _drw=draw_map
+  _upd=update_map
+  refresh_map() 
+  return 
  end
+
 end
 
 function update_drop()
@@ -780,6 +799,14 @@ function col3(ob)
  
  return true
 end
+
+function copylist(org)
+ local ret={}
+ for k, v in pairs(org) do
+  ret[k]=v
+ end
+ return ret
+end
 -->8
 --i/o
 function export(auto)
@@ -899,8 +926,9 @@ function refresh_map()
  local ens=spwnlst(scroll)
  if #ens>0 then
   for i=1,#ens do
+   local brn=ens[i][5] or enlib[abs(ens[i][2])][3]
 		 add(lne,{
-			 txt=tostrn(ens[i][2],2,"0"),
+			 txt=tostrn(brn,2,"0"),
 			 w="  ",
 			 cmd="editen",
 			 cmdsch=ens[i],
@@ -961,6 +989,20 @@ function genens()
  end
 end
 
+function calcoffset(sch)
+ local offx,offy=0,0
+ local mirr=sgn(sch[2])
+	local en=enlib[abs(sch[2])]
+	local brn=sch[5] or en[3]
+ local curtrails=trails[brn]
+ local enage=(scroll-sch[1])
+ local trailage=enage+1
+ if trailage<=#curtrails then
+		offx=curtrails[trailage][1]*mirr
+		offy=curtrails[trailage][2] 
+ end
+ return offx,offy
+end
 
 
 function refresh_table()
@@ -1078,14 +1120,13 @@ function dobutton(b)
   refresh_map()
   dirty=true
  elseif b.cmd=="copyen" then
-  local newsched={
-   b.cmdsch[1],
-   b.cmdsch[2],
-   b.cmdsch[3],
-   b.cmdsch[4]
-  }
+  local newsched=copylist(b.cmdsch)
   add(sched,newsched)
   selsched=newsched
+  
+  undox=selsched[3]
+  undoy=selsched[4]
+  undot=selsched[1]
   
   _drw=draw_move
   _upd=update_move
@@ -1093,6 +1134,9 @@ function dobutton(b)
  elseif b.cmd=="moveen" then
   _drw=draw_move
   _upd=update_move
+  undox=selsched[3]
+  undoy=selsched[4]
+  undot=selsched[1]
   refresh_move() 
  end
 end

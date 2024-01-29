@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 -- todo
--- -animation preview
+-- -preview
 -- -visual sprite selection
 
 function _init()
@@ -11,6 +11,7 @@ function _init()
  
  --- customize here ---
  #include shmup_anilib.txt
+ #include shmup_myspr.txt
  file="shmup_anilib.txt"
  arrname="anilib"
  data=anilib
@@ -32,6 +33,10 @@ function _init()
  scrollx=0
  
  poke(0x5f2d, 1)
+ 
+ prevspr=nil
+ prevspd=5
+ t=0
 end
 
 function _draw()
@@ -70,6 +75,7 @@ function _update60()
    dirty=false
   end
  end
+ t+=1
 end
 
 function dokeys()
@@ -88,8 +94,26 @@ end
 
 function draw_table()
  cls(2)
- --spr(0,0,0,16,16)
- 
+
+ -- sprite preview
+ camera()
+ clip(0,0,128,50)
+ fillp(0b11001100001100111100110000110011)
+ rectfill(0,0,127,127,33)
+ fillp(▒)
+ line(63,0,63,127,13)
+ line(0,25,127,25,13)
+ fillp() 
+ if prevspr then
+  mspr(prevspr,63,25)
+  bgprint(prevspr,2,43,13)
+ end
+ bgprint("spd:"..prevspd,2,2,15)
+
+ clip()
+ -- table view
+ clip(0,50,128,128)
+ camera(0,-48)
 	if menu then
 		for i=1,#menu do
 		 for j=1,#menu[i] do
@@ -131,6 +155,8 @@ function draw_table()
   end
  end
  ]]
+ camera()
+ clip()
 end
 
 function refresh_table()
@@ -187,6 +213,13 @@ end
 function update_table()
  refresh_table()
 
+ if key=="w" then
+  prevspd+=1
+ elseif key=="s" then
+  prevspd-=1
+ end
+ prevspd=max(1,prevspd)
+ 
  if btnp(⬆️) then
   cury-=1
  end
@@ -209,7 +242,7 @@ function update_table()
   curx=1
  end
  local mymnu=menu[cury][curx]
- if mymnu.y+scrolly>110 then
+ if mymnu.y+scrolly>62 then
   scrolly-=4
  end
  if mymnu.y+scrolly<10 then
@@ -238,6 +271,13 @@ function update_table()
    add(data[mymnu.cmdy],0)
    dirty=true
   end
+ end
+ 
+ local mymnu=menu[cury][curx]
+ if mymnu.cmdy then
+  prevspr=cyc(t,anilib[mymnu.cmdy],prevspd)
+ else
+  prevspr=nil
  end
 end
 
@@ -296,7 +336,28 @@ function upd_type()
  if btnp(➡️) then
   typecur+=1
  end
+ --nudge
+ if btnp(⬆️) then
+  local mymnu=menu[cury][curx]
+  local prevval=tonum(typetxt) or 0
+  typetxt=tostr(prevval-1)
+ end
+ if btnp(⬇️) then
+  local mymnu=menu[cury][curx]
+  local prevval=tonum(typetxt) or 0
+  typetxt=tostr(prevval+1)
+ end
  typecur=mid(1,typecur,#typetxt+1)
+ 
+ -- preview
+ local prevval=tonum(typetxt)
+ if prevval==nil or prevval<1 or prevval>#myspr then
+  local mymnu=menu[cury][curx]
+  prevspr=data[mymnu.cmdy][mymnu.cmdx]
+ else
+  prevspr=prevval
+ end
+ 
 end
 -->8
 --tools
@@ -312,6 +373,29 @@ function split2d(s)
  end
  return arr
 end
+
+function cyc(age,arr,anis)
+ local anis=anis or 1
+ return arr[(age\anis-1)%#arr+1]
+end
+
+function mspr(si,sx,sy)
+ -- robustness
+ if si<1 or si>#myspr then
+  return
+ end
+ -----
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ if _fx==2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ end
+ 
+ if _nx then
+  mspr(_nx,sx,sy)
+ end
+end
+
 -->8
 --i/o
 function export(auto)

@@ -11,6 +11,8 @@ function _init()
  
  --- customize here ---
  #include shmup_enlib.txt
+ #include shmup_myspr.txt
+ #include shmup_anilib.txt
  file="shmup_enlib.txt"
  arrname="enlib"
  data=enlib
@@ -31,7 +33,10 @@ function _init()
  scrolly=0
  scrollx=0
  
+ preven=nil
+ 
  poke(0x5f2d, 1)
+ t=0
 end
 
 function _draw()
@@ -70,6 +75,7 @@ function _update60()
    dirty=false
   end
  end
+ t+=1
 end
 
 function dokeys()
@@ -90,6 +96,23 @@ function draw_table()
  cls(2)
  --spr(0,0,0,16,16)
  
+ -- enemy preview
+ camera()
+ clip(0,0,128,50)
+ fillp(0b11001100001100111100110000110011)
+ rectfill(0,0,127,127,33)
+ fillp(▒)
+ line(63,0,63,127,13)
+ line(0,25,127,25,13)
+ fillp() 
+ if prevspr then
+  mspr(prevspr,63,25)
+ end
+
+ clip()
+ -- table view 
+ clip(0,58,128,128)
+ camera(0,-48)
 	if menu then
 		for i=1,#menu do
 		 for j=1,#menu[i] do
@@ -131,6 +154,20 @@ function draw_table()
   end
  end
  ]]
+ -- headers
+ clip(0,50,128,8)
+ camera(0,-48)
+	if menu then
+		for j=1,#menu[1] do
+		 local mymnu=menu[1][j]
+		 local c=mymnu.c or 13
+			bgprint(mymnu.w,mymnu.x+scrollx,mymnu.y,13)
+		 bgprint(mymnu.txt,mymnu.x+scrollx,mymnu.y,c) 
+		end
+ end
+ camera()
+ clip()
+
 end
 
 function refresh_table()
@@ -225,7 +262,7 @@ function update_table()
   curx=1
  end
  local mymnu=menu[cury][curx]
- if mymnu.y+scrolly>110 then
+ if mymnu.y+scrolly>62 then
   scrolly-=4
  end
  if mymnu.y+scrolly<10 then
@@ -254,6 +291,24 @@ function update_table()
    add(data[mymnu.cmdy],0)
    dirty=true 
   end
+ end
+ 
+ local mymnu=menu[cury][curx]
+ if mymnu.cmdy then
+  if mymnu.cmdy>=1 and mymnu.cmdy<=#enlib then
+   local myen=enlib[mymnu.cmdy]
+   if myen[1] and myen[1]>=1 and myen[1]<=#anilib then
+    local prevani=anilib[myen[1]]
+    local prevspd=myen[2] or 0
+    prevspr=cyc(t,prevani,prevspd)
+   else
+    prevspr=nil 
+   end
+  else
+   prevspr=nil 
+  end
+ else
+  prevspr=nil
  end
 end
 
@@ -327,6 +382,28 @@ function split2d(s)
   arr[k] = split(v)
  end
  return arr
+end
+
+function cyc(age,arr,anis)
+ local anis=anis or 1
+ return arr[(age\anis-1)%#arr+1]
+end
+
+function mspr(si,sx,sy)
+ -- robustness
+ if si<1 or si>#myspr then
+  return
+ end
+ -----
+ local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
+ sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
+ if _fx==2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ end
+ 
+ if _nx then
+  mspr(_nx,sx,sy)
+ end
 end
 -->8
 --i/o

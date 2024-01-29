@@ -5,10 +5,6 @@ __lua__
 
 -- todo
 -------
--- ground
--- - moving with background
--- - drawing order
--- - collision
 
 -- how do i fire multiple bullets
 
@@ -92,10 +88,18 @@ function _init()
   x=64,
   y=110
  }
- 
+
+ screen={
+  x=0,
+  y=0,
+  col=split("0,0,144,128,0,0")
+ }
+  
  poke(0x5f2d, 1)
  
  t=0
+ 
+
 end
 
 function _draw()
@@ -307,6 +311,8 @@ function update_setup()
  end
  
  if btnp(🅾️) then
+  curx=1
+  cury=1
   _upd=update_brain
   refresh_brain()
   return
@@ -328,6 +334,58 @@ function update_setup()
   enemies={}
  end
 
+end
+
+function update_drop()
+ scrolly=0
+ refresh_drop()
+ if btnp(⬆️) then
+  cury-=1
+ end
+ if btnp(⬇️) then
+  cury+=1
+ end
+ cury=mid(2,cury,#menu)
+ curx=1
+ 
+ if btnp(❎) then
+  local mymnu=menu[cury][curx]
+  if mymnu.cmd=="setup" then
+   refresh_setup()
+   _upd=update_setup
+   return
+  elseif mymnu.cmd=="copybrain" then
+			local newbrn=copylist(data[mymnu.cmdb])
+			local newmet=copylist(meta[mymnu.cmdb])
+			add(data,newbrn)
+			add(meta,newmet)
+			selbrain=#data
+   dirty=true
+	  curx=1
+	  cury=1
+	  _upd=update_brain
+	  refresh_brain()			   
+  elseif mymnu.cmd=="delbrain" then
+   deli(data,mymnu.cmdb)
+   deli(meta,mymnu.cmdb)
+   add(msg,{txt="brain deleted!",t=120})
+   dirty=true
+	  curx=1
+	  cury=1
+	  _upd=update_brain
+	  refresh_brain()
+	  return
+  end
+ end
+ 
+ if btnp(🅾️) then
+  curx=1
+  cury=1
+  _upd=update_brain
+  refresh_brain()
+  return
+ end
+ 
 end
 
 function update_brain()
@@ -358,16 +416,19 @@ function update_brain()
 	 if btnp(⬅️) then
 	  selbrain-=1
 	  enemies={}
+	  buls={}
 	  curtrails=trails[selbrain] or {}
 	  newtrails=curtrails
 	 end
 	 if btnp(➡️) then
 	  selbrain+=1
 	  enemies={}
+	  buls={}
 	  curtrails=trails[selbrain] or {}
 	  newtrails=curtrails
 	 end
 	 selbrain=mid(1,selbrain,#data+1)
+	 curx=1
  else
 	 if btnp(⬅️) then
 	  curx-=1
@@ -403,9 +464,9 @@ function update_brain()
    cury+=1
    curx=1
    dirty=true
-  elseif mymnu.cmd=="setup" then
-   refresh_setup()
-   _upd=update_setup
+  elseif mymnu.cmd=="drop" then
+   refresh_drop()
+   _upd=update_drop
    return
   elseif mymnu.cmd=="newbrain" then
    add(data,{
@@ -600,6 +661,27 @@ end
 function spread(val)
  return (rnd(2)-1)*val
 end
+
+function col2(oa,ob) 
+ local _ax,_ay,_aw,_ah,_aox,_aoy,_afx=unpack(oa.col)
+ local _bx,_by,_bw,_bh,_box,_boy,_bfx=unpack(ob.col)
+ local a_left=flr(oa.x)-_aox
+ local a_top=flr(oa.y)-_aoy
+ local a_right=a_left+_aw-1
+ local a_bottom=a_top+_ah-1
+ 
+ local b_left=flr(ob.x)-_box
+ local b_top=flr(ob.y)-_boy
+ local b_right=b_left+_bw-1
+ local b_bottom=b_top+_bh-1
+
+ if a_top>b_bottom then return false end
+ if b_top>a_bottom then return false end
+ if a_left>b_right then return false end
+ if b_left>a_right then return false end
+ 
+ return true
+end
 -->8
 --i/o
 function export(auto)
@@ -699,11 +781,51 @@ function refresh_setup()
 
 end
 
+function refresh_drop()
+ menu={}
+ menui={}
+ add(menu,{{
+	 txt="< brain "..selbrain.." >",
+	 w="            ",
+	 cmd="",
+	 x=3,
+	 y=3,
+	 c=13  
+ }})
+ add(menu,{{
+	 txt="◆setup",
+	 w="       ",
+	 cmd="setup",
+	 cmdb=selbrain,
+	 x=53,
+	 y=3,
+	 c=13 
+ }})
+ add(menu,{{
+	 txt="copy",
+	 w="    ",
+	 cmd="copybrain",
+	 cmdb=selbrain,
+	 x=53,
+	 y=3+7,
+	 c=13 
+ }})
+ add(menu,{{
+	 txt="delete",
+	 w="      ",
+	 cmd="delbrain",
+	 cmdb=selbrain,
+	 x=53,
+	 y=3+14,
+	 c=13 
+ }}) 
+
+end
+
 function refresh_brain()
  menu={}
  menui={}
- execy=-16
- 
+ execy=-16 
  if selbrain>#data then
   --empty brain slot
   add(menu,{{
@@ -720,22 +842,14 @@ function refresh_brain()
  add(menu,{{
 	 txt="< brain "..selbrain.." >",
 	 w="            ",
-	 cmd="head",
+	 cmd="drop",
 	 x=3,
 	 y=3,
 	 c=13  
  }}) 
- add(menu,{{
-	 txt="◆setup",
-	 w="       ",
-	 cmd="setup",
-	 x=3,
-	 y=3+8,
-	 c=13 
- }})
  
  local mybra=brains[selbrain]
- local ly=19
+ local ly=11
  for i=1,#mybra,3 do
   if enemies[1] then
    local myen=enemies[1]
@@ -1075,12 +1189,18 @@ function doenemies()
   
   
   e.age+=1
+
+
+  local oscr=col2(e,screen)
   
-  if not onscreen(e) then
+  if e.staged and not oscr then
    del(enemies,e)
-  else  
-   dobulq(e)
+  else
+   e.staged=oscr
   end
+  if e.staged then
+   dobulq(e)  
+  end 
   
  end
 end
@@ -1112,7 +1232,7 @@ function spawnen(eni,enx,eny)
   age=0,
   flash=0,
   hp=en[4],
-  col=en[5],
+  col=myspr[en[5]],
   layer=en[6],
   colshot=en[7]>0,
   colship=en[7]>1,  
