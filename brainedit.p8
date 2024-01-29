@@ -925,6 +925,14 @@ function refresh_brain()
 			y=3,
 			c=3  
 		}})
+		add(menui,{{
+			txt=flr(protag.x)..","..flr(protag.y),
+			w="       ",
+			cmd="",
+			x=98,
+			y=3+8,
+			c=3  
+		}})
 	end
 end
 
@@ -1131,6 +1139,7 @@ function dobrain(e,depth)
   elseif cmd=="mov" then
    e.movx=par1
    e.movy=par2
+   quit=true
   else
    --★ extra robustness
    return
@@ -1143,7 +1152,7 @@ end
 
 function doenemies()
  for e in all(enemies) do
-  if e.wait>0 then
+  if e.wait>0 or e.movx then
    e.wait-=1
   elseif e.dist<=0 then
    dobrain(e)
