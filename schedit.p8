@@ -1,8 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
--- path
--------
+-- todo
+ -- x brain decision on spawn level
+ --   enemy mirroring  
 
 function _init()
  autosave=true
@@ -399,11 +400,34 @@ function update_drop()
   local sched=menu[cury][curx].cmdsch
   if btnp(⬅️) then
    sched[2]-=1
+   dirty=true
   end
   if btnp(➡️) then
    sched[2]+=1
+   dirty=true
   end
   sched[2]=mid(1,sched[2],#enlib)
+ elseif menu[cury][curx].cmd=="enbrain" then
+  local sched=menu[cury][curx].cmdsch
+  local myen=enlib[sched[2]]
+  local brn=sched[5] or myen[3]
+
+  if btnp(⬅️) then
+   brn-=1
+   dirty=true
+  end
+  if btnp(➡️) then
+   brn+=1
+   dirty=true
+  end
+  brn=mid(1,brn,#trails)
+  
+  if brn==myen[3] then
+   sched[5]=nil
+  else
+   sched[5]=brn
+  end
+  
  else
 	 if btnp(❎) then
 	  dobutton(menu[cury][curx])
@@ -797,13 +821,26 @@ function refresh_drop()
 	 y=dropy,
 	 c=13
  }})
+ 
+ local myen=enlib[selsched[2]]
+ local brn=selsched[5] or myen[3]
+ 
+ add(menu,{{
+	 txt="< "..tostrn(brn,2,"0").." >",
+	 w="      ",
+	 cmd="enbrain",
+	 cmdsch=selsched,
+	 x=dropx,
+	 y=dropy+6,
+	 c=13
+ }})
  add(menu,{{
 	 txt="move",
 	 w="      ",
 	 cmd="moveen",
 	 cmdsch=selsched,
 	 x=dropx,
-	 y=dropy+6,
+	 y=dropy+12,
 	 c=13
  }})
  add(menu,{{
@@ -812,7 +849,7 @@ function refresh_drop()
 	 cmd="copyen",
 	 cmdsch=selsched,
 	 x=dropx,
-	 y=dropy+12,
+	 y=dropy+18,
 	 c=13
  }}) 
  
@@ -822,7 +859,7 @@ function refresh_drop()
 	 cmd="delen",
 	 cmdsch=selsched,
 	 x=dropx,
-	 y=dropy+18,
+	 y=dropy+24,
 	 c=13
  }}) 
 
@@ -876,8 +913,9 @@ function genens()
  for sch in all(sched) do
  
   if sch[1]<=scroll then
-	  local en=enlib[sch[2] ]
-   local curtrails=trails[en[3]]
+	  local en=enlib[sch[2]]
+	  local brn=sch[5] or en[3]
+   local curtrails=trails[brn]
    local enage=(scroll-sch[1])
    local trailage=enage+1
    
@@ -984,6 +1022,24 @@ function dobutton(b)
    sched[2]+=1
   end
   sched[2]=mid(1,sched[2],#enlib)
+  dirty=true
+ elseif b.cmd=="enbrain" then
+  local cx=mousex-dropx
+  local sched=b.cmdsch
+  local myen=enlib[sched[2]]
+  local brn=sched[5] or myen[3]
+
+  if cx<=12 then
+   brn-=1
+  else
+   brn+=1
+  end
+  brn=mid(1,brn,#trails)
+  if brn==myen[3] then
+   sched[5]=nil
+  else
+   sched[5]=brn
+  end
   dirty=true
  elseif b.cmd=="delen" then
   del(sched,b.cmdsch)

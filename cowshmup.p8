@@ -439,7 +439,7 @@ function die2()
  invul=150
 end
 
-function spawnen(eni,enx,eny)
+function spawnen(eni,enx,eny,enb)
  local en=enlib[eni]
  
  add(enemies,{
@@ -451,7 +451,7 @@ function spawnen(eni,enx,eny)
   sy=0,
   ang=0,
   spd=0,
-  brain=en[3],
+  brain=enb or en[3],
   bri=1,
   age=0,
   flash=0,

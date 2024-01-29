@@ -159,20 +159,72 @@ THIRD GOAL: Great Wall of Shmups
   - brain system leftover (enemy goto location command)
      
 FOURTH GOAL: Workflow Test Run
-- I want to create a few seconds of gameplay (50secs)
+X I want to create a few seconds of gameplay (50secs)
 
-- Before
-  - Autosave
-  - Music/SFX
+X Before
+  X Autosave
+  X Music/SFX
 
-- Create a few seconds of gameplay (50secs)
+X Create a few seconds of gameplay (50secs)
 
-- Identify Needs
+> Identify Needs
   - Do we need boss phases?
   - Spawningv minions?
 
-- Smol things
+> Smol things
   - enemy scrolling in sync with bg (ground enemies)
   - maybe update splash and muzz in draw?
   - brain system leftover (enemy goto location command)
-     
+
+---------------------------------------------
+FIFTH GOAL: Final Fixes
+---------------------------------------------
+
+- System Fixes (Dont break the level) (KINDA EASY)
+  - Schedule/Brain
+    - Brain decision on spawn level
+    - Enemy mirroring  
+    - Brain: enemy goto location command
+    - Ground Enemies
+      - Movement relative to ground
+      - Drawing order
+      - Collision
+      - Sealing?
+  - Pattern
+    - I want to easily manipulate bulloet speed
+    - We can merge spread and burst
+  - Sound
+    - Repetetive Explosions
+    - Enemy Shot sounds
+  - maybe update splash and muzz in draw?
+
+- Editor Fixes (VERY EASY)
+  - Enedit: Enemy preview
+  - Aniedit: Animation preview
+  - Brainedit: Better onstaging
+  - Brainedit: Copy Brain
+  - Schedit: Move Undo?
+  - Schedit: Clickmove moves enemy not spawn
+  - Patedit: Copy pattern
+  - LOW PRIO Schedit: Breaks when no enemies
+  - LOW PRIO Brainedit: Deleting brains should be easier
+
+- New Things (MID)
+  - Dead Zones
+  - Cutoff
+  - Hover effect / Ground shadow
+  - Bullet cancelling
+  - Bullets not from center of sprite
+
+- Design Questions (HARD)
+  - Special Ability? Bomb?
+  - Do we mant a spread shot?
+  - Pickups?
+  - Scoring?
+  - UI for Scoring?
+  - Do we need boss phases?
+  - Bosss Spawning minions?
+
+---------------------------------------------
+SIXTH GOAL: Make the Game
+---------------------------------------------
