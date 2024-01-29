@@ -5,7 +5,11 @@ __lua__
 
 -- todo
 -------
--- position goto
+-- ground
+-- - moving with background
+-- - drawing order
+-- - collision
+
 -- how do i fire multiple bullets
 
 function _init()
@@ -1066,7 +1070,7 @@ function doenemies()
 	  e.sy=cos(e.ang)*e.spd
    e.dist=max(0,e.dist-abs(e.spd))
    e.x+=e.sx
-   e.y+=e.sy
+   e.y+=e.layer==1 and 0.2+e.sy or e.sy
   end
   
   
@@ -1109,6 +1113,9 @@ function spawnen(eni,enx,eny)
   flash=0,
   hp=en[4],
   col=en[5],
+  layer=en[6],
+  colshot=en[7]>0,
+  colship=en[7]>1,  
   wait=0,
   dist=0,
   bulq={}
@@ -1173,7 +1180,7 @@ end
 
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
- local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
+ local patype,p2,p3,p4,p5,p6,p7,p8,p9=unpack(mypat)
  if patype=="base" then
   add(ret,{
    age=0,
@@ -1192,25 +1199,27 @@ function makepat(pat,pang)
   end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do
+   local rndw,rnds=flr(rnd(p7)),rnd(p6)
    for p in all(makepat(p2,pang)) do
-    p.spd+=i*p6
-    p.wait+=i*p7
-    add(ret,p)
-    if i>0 and p8>0 then
-     local copyp=copylist(p)
-     copyp.ang+=i*-p5
-     add(ret,copyp)
+    p.spd+=p9
+    if p8==2 then
+     --burst
+     p.ang+=spread(p5)
+     p.wait+=rndw
+     p.spd+=rnds     
+    else
+     --spread
+     p.spd+=i*p6
+     p.wait+=i*p7
+     if i>0 and p8>0 then
+      --mirror
+      local copyp=copylist(p)
+      copyp.ang+=i*-p5
+      add(ret,copyp)
+     end
+     p.ang+=i*p5
     end
-    p.ang+=i*p5
-   end
-  end
- elseif patype=="brst" then
-  for i=1,p3 do
-   local rndw,rnds=flr(rnd(p6)),rnd(p5)
-   for p in all(makepat(p2,pang+spread(p4))) do
-    p.wait+=rndw
-    p.spd+=rnds
-    add(ret,p)
+    add(ret,p)   
    end
   end
  elseif patype=="comb" then

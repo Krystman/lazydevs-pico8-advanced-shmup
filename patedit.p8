@@ -3,9 +3,7 @@ version 41
 __lua__
 -- todo
 ------------------
--- bring it into the game
--- bring it into brainedit
-
+-- burst collapsed into spread
 -- shift?
 
 
@@ -29,6 +27,12 @@ function _init()
  #include shmup_anilib.txt
  ----------------------
 
+ for p in all(pats) do
+  if p[1]=="sprd" then
+   p[9]=0
+  end
+ end
+ 
  debug={}
  msg={}
  
@@ -570,17 +574,9 @@ function refresh_pats()
 	  "ang :",
 	  "spd :",
 	  "time:",
-	  "mirr:"
+	  "type:",
+	  "spd+:"
 	 }  
- elseif mypat[1]=="brst" then
-	 mycap={
-	  "src :",
-	  "num :",
-	  "ang :",
-	  "spd :",
-	  "time:"
-
-	 }
  elseif mypat[1]=="comb" then
 	 mycap={
 	  "src1:",
@@ -707,16 +703,8 @@ function newpat(typ)
    0.1,
    0,
    0,
-   0
-  }
- elseif typ=="brst" then
-  return {
-   "brst",
-   1,
-   1,
-   0.5,
    0,
-   5
+   0,
   }
  elseif typ=="comb" then
   return {
@@ -817,7 +805,7 @@ end
 
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
- local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
+ local patype,p2,p3,p4,p5,p6,p7,p8,p9=unpack(mypat)
  if patype=="base" then
   add(ret,{
    age=0,
@@ -836,25 +824,27 @@ function makepat(pat,pang)
   end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do
+   local rndw,rnds=flr(rnd(p7)),rnd(p6)
    for p in all(makepat(p2,pang)) do
-    p.spd+=i*p6
-    p.wait+=i*p7
-    add(ret,p)
-    if i>0 and p8>0 then
-     local copyp=copylist(p)
-     copyp.ang+=i*-p5
-     add(ret,copyp)
+    p.spd+=p9
+    if p8==2 then
+     --burst
+     p.ang+=spread(p5)
+     p.wait+=rndw
+     p.spd+=rnds     
+    else
+     --spread
+     p.spd+=i*p6
+     p.wait+=i*p7
+     if i>0 and p8>0 then
+      --mirror
+      local copyp=copylist(p)
+      copyp.ang+=i*-p5
+      add(ret,copyp)
+     end
+     p.ang+=i*p5
     end
-    p.ang+=i*p5
-   end
-  end
- elseif patype=="brst" then
-  for i=1,p3 do
-   local rndw,rnds=flr(rnd(p6)),rnd(p5)
-   for p in all(makepat(p2,pang+spread(p4))) do
-    p.wait+=rndw
-    p.spd+=rnds
-    add(ret,p)
+    add(ret,p)   
    end
   end
  elseif patype=="comb" then

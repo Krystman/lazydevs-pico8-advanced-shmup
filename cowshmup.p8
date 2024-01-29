@@ -3,10 +3,8 @@ version 41
 __lua__
 
 -- main todo
---  - ground enemies
---  - pattern
---  - - bullet speed manip
---  - - merge
+
+-- wait when moving enemy
 
 function _init()
  t=0
@@ -85,7 +83,7 @@ function startgame()
  --★
  
  --scroll=208
- scroll=0
+ scroll=220
  for i=1,#sched do
   if sched[i][1]<scroll then
    schedi=i+1
@@ -132,16 +130,20 @@ function drw_game()
   map(seg.x,seg.y,0,scroll-seg.o,18,8)
  end
  
- for e in all(enemies) do
-  if e.flash>0 then
-   e.flash-=1
-   pal(pal_flash)
-  end
-  drawobj(e) 
-  --mspr(cyc(e.age,e.ani,e.anis),e.x,e.y)
-  
-  pset(e.x,e.y,8)
-  pal()
+ for l=1,2 do
+	 for e in all(enemies) do
+	  if e.layer==l then
+		  if e.flash>0 then
+		   e.flash-=1
+		   pal(pal_flash)
+		  end
+		  drawobj(e) 
+		  --mspr(cyc(e.age,e.ani,e.anis),e.x,e.y)
+		  
+		  pset(e.x,e.y,8)
+		  pal()
+	  end
+	 end
  end
  
  for s in all(shots) do
@@ -290,7 +292,7 @@ function upd_game()
  -- shots vs enemies
  for e in all(enemies) do
   for s in all(shots) do
-   if not s.delme and col2(e,s) then     
+   if e.colshot and not s.delme and col2(e,s) then
     e.flash=2
     s.delme=true
     
@@ -310,12 +312,13 @@ function upd_game()
      explode(e.x,e.y)
     end 
    end
+
   end
  end  
  -- ship vs enemies
  if invul<=0 then
 	 for e in all(enemies) do
-	  if col2(pspr,e) then
+	  if e.colship and col2(pspr,e) then
 	   die()
 	  end
 	 end
@@ -420,6 +423,15 @@ function copylist(org)
  return ret
 end
 
+function dist(x1,y1,x2,y2)
+ local dx,dy=x2-x1,y2-y1
+ return sqrt(dx*dx+dy*dy)
+end
+
+function spread(val)
+ return (rnd(2)-1)*val
+end
+
 -->8
 --gameplay
 
@@ -454,6 +466,9 @@ function spawnen(eni,enx,eny,enb)
   flash=0,
   hp=en[4],
   col=myspr[en[5]],
+  layer=en[6],
+  colshot=en[7]>0,
+  colship=en[7]>1,
   wait=0,
   dist=0,
   bulq={}
@@ -503,7 +518,7 @@ function doenemies()
    e.sy=cos(e.ang)*e.spd
    e.dist=max(0,e.dist-abs(e.spd))
    e.x+=e.sx
-   e.y+=e.sy
+   e.y+=e.layer==1 and 0.2+e.sy or e.sy
   end
   
   e.age+=1
@@ -632,7 +647,7 @@ end
 
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
- local patype,p2,p3,p4,p5,p6,p7,p8=unpack(mypat)
+ local patype,p2,p3,p4,p5,p6,p7,p8,p9=unpack(mypat)
  if patype=="base" then
   add(ret,{
    age=0,
@@ -651,16 +666,27 @@ function makepat(pat,pang)
   end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do
+   local rndw,rnds=flr(rnd(p7)),rnd(p6)
    for p in all(makepat(p2,pang)) do
-    p.spd+=i*p6
-    p.wait+=i*p7
-    add(ret,p)
-    if i>0 and p8>0 then
-     local copyp=copylist(p)
-     copyp.ang+=i*-p5
-     add(ret,copyp)
+    p.spd+=p9
+    if p8==2 then
+     --burst
+     p.ang+=spread(p5)
+     p.wait+=rndw
+     p.spd+=rnds     
+    else
+     --spread
+     p.spd+=i*p6
+     p.wait+=i*p7
+     if i>0 and p8>0 then
+      --mirror
+      local copyp=copylist(p)
+      copyp.ang+=i*-p5
+      add(ret,copyp)
+     end
+     p.ang+=i*p5
     end
-    p.ang+=i*p5
+    add(ret,p)   
    end
   end
  elseif patype=="brst" then
