@@ -4,10 +4,9 @@ __lua__
 
 -- main todo
 -------------------
--- bullet cancelling
--- bullet sealing
 -- bullet origin
 -- retargeting?
+-- enemy fire sounds
 
 function _init()
  t=0
@@ -91,8 +90,8 @@ function startgame()
  --★
  
  --scroll=208
- --scroll=220
- scroll=0
+ scroll=220
+ --scroll=0
  for i=1,#sched do
   if sched[i][1]<scroll then
    schedi=i+1
@@ -155,7 +154,11 @@ function drw_game()
 		   e.flash-=1
 		   pal(pal_flash)
 		  end
-		  drawobj(e) 
+		  drawobj(e)
+		  
+		  if e.sealed then
+		   print("x",e.x,e.y,8)
+		  end
 		  pal()
 	  end
 	 end
@@ -307,6 +310,7 @@ function upd_game()
  doenemies()
  
  -- shots vs enemies
+ local hashit=false
  for e in all(enemies) do
   for s in all(shots) do
    if e.colshot and not s.delme and col2(e,s) then
@@ -327,13 +331,35 @@ function upd_game()
      e.flash=2
     end
     
+    
     if e.hp<=0 then
      del(enemies,e)
      explode(e.x,e.y)
+     if e.canc>0 then
+      --bullet cancel
+      for b in all(buls) do
+       if b.en==e then
+        del(buls,b)
+							 add(parts,{
+							  draw=shwave,
+							  x=b.x,
+							  y=b.y,
+							  c=7,
+							  r=0,
+							  sr=0.5,
+							  maxage=7
+							 })
+       end
+      end
+     end
+    else
+     hashit=true
     end 
    end
-
   end
+ end
+ if hashit then
+  sfx(6,3)
  end  
  -- ship vs enemies
  if invul<=0 then
@@ -757,12 +783,14 @@ function dobulq(en)
  local oldb=#buls
  for b in all(en.bulq) do
   if b.wait<=0 then
-	  b.x+=en.x
-	  b.y+=en.y
-	  b.sx=sin(b.ang)*b.spd
-	  b.sy=cos(b.ang)*b.spd
-	  
-   add(buls,b)
+   if en.layer>1 or dist(pspr.x,pspr.y,en.x,en.y)>24 then
+	   b.x+=en.x
+	   b.y+=en.y
+	   b.sx=sin(b.ang)*b.spd
+	   b.sy=cos(b.ang)*b.spd
+	   b.en=en
+    add(buls,b)
+   end
    del(en.bulq,b)
   else
    b.wait-=1
@@ -987,12 +1015,13 @@ function blob(p)
 end
 
 function spark(p)
- --47
- 
  for i=0,1 do
   line(p.x+i,p.y,p.x+p.sx*2+i,p.y+p.sy*2,p.c)
- end
- 
+ end 
+end
+
+function shwave(p)
+ circ(p.x,p.y,p.r,p.c)
 end
 
 function sprite(p)
@@ -1176,8 +1205,8 @@ __sfx__
 12020000129701f9703c970376703867027670396701c670306703067025670326700b6300e670106700867005670056700567008670096700a67008670076700567006670096700b67003670036700267002670
 12020000129701f9703c970386703e670376703567035670376703367031670316701f63022670256702867029670146700b6700c67006670046702067024670256700b670216701d6701d630286302c62005600
 010300003a0363f0463c0161b5002250017500225001750000000175000a5000a5000050000500005000050000700007000070000700007000070000700007000070000700007000070000700007000070000700
-4d0c00000d5000d500105000c500155000c500175000c0001c5000c500175000c500155000c500105000c500135000c500155000c50019500185001a50018500195000c500175000c500155000c5001050000000
-110c00001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001f0001c0001c0001c0001c0001c0001c0001c0001c000
+060300003264009600106000c600156000c600176000c6001c6000c600176000c600156000c600106000c600136000c600156000c60019600186001a60018600196000c600176000c600156000c6001060000600
+a0030000087000d700107000c700157000c700177000c7001c7000c700177000c700157000c700107000c700137000c700157000c70019700187001a70018700197000c700177000c700157000c7001070000700
 090c00000f063184101c4101f410234101f4101c4101841017410184101c4101f410234201f4201c4101841017410184101c4101f410234201f4201c420184100f063184141c4101f410234201f4201842017420
 090c00000f063194141c4102141023420214201c4101941017414194101c4102141023420214201c420194100f033194141c4202142023430214301c420194100f063194241c420214301a440194401a4321c430
 110c00000023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300723007230072300723007230072300723007230
