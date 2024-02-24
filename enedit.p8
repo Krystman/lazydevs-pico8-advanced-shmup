@@ -1,9 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---show cursor
---move the cursor
---backspace
 
 function _init()
  autosave=true
@@ -34,7 +31,7 @@ function _init()
  scrollx=0
  
  preven=nil
- 
+ prevshad=nil
  poke(0x5f2d, 1)
  t=0
 end
@@ -105,6 +102,9 @@ function draw_table()
  line(63,0,63,127,13)
  line(0,25,127,25,13)
  fillp() 
+ if prevshad then
+  drawshad(prevshad)
+ end
  if prevspr then
   mspr(prevspr,63,25)
  end
@@ -173,7 +173,7 @@ end
 function refresh_table()
  menu={}
  
- local caps={"","ani","asp","brn","hp","col","gnd","col","cnc"}
+ local caps={"","ani","asp","brn","hp","col","gnd","cfl","cnc","shs","shh","fx"}
  
  local lne={}
  for i=1,#caps do
@@ -301,11 +301,21 @@ function update_table()
     local prevani=anilib[myen[1]]
     local prevspd=myen[2] or 0
     prevspr=cyc(t,prevani,prevspd)
+    prevshad={
+   		x=63,y=25,
+   		shads=myen[9] or 0,
+   		shadh=myen[10] or 0
+  		}
+  		if prevshad.shads==0 then
+  		 prevshad=nil
+  		end
    else
-    prevspr=nil 
+    prevspr=nil
+    prevshad=nil
    end
   else
-   prevspr=nil 
+   prevspr=nil
+   prevshad=nil
   end
  else
   prevspr=nil
@@ -404,6 +414,11 @@ function mspr(si,sx,sy)
  if _nx then
   mspr(_nx,sx,sy)
  end
+end
+
+function drawshad(obj)
+ local ox,oy,ow,oh=obj.x,obj.y+obj.shadh,obj.shads,obj.shads/1.5
+ ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,0)
 end
 -->8
 --i/o

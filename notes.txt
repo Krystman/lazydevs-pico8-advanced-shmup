@@ -17,6 +17,9 @@ Enemy Data
 6 Ground (1 Ground, 2 Air)
 7 Collision (0 - no bullets, 1 - no ship, 2 - normal)
 8 Bullet Cancelling (0 No, 1 Yes)
+9 Shadow Size
+10 Shadow Height
+11 FX
 
 Spawn/Sched Data
 1 Time

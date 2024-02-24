@@ -4,8 +4,8 @@ __lua__
 
 -- main todo
 -------------------
--- shadow/hover tweak
 -- bullet cancelling
+-- bullet sealing
 -- bullet origin
 -- retargeting?
 
@@ -75,7 +75,9 @@ function startgame()
   y=0,
   age=0,
   ani={3},
-  col=myspr[28]
+  col=myspr[28],
+  shads=3,
+  shadh=18
  }
  invul=0
  inviz=0
@@ -89,7 +91,8 @@ function startgame()
  --★
  
  --scroll=208
- scroll=220
+ --scroll=220
+ scroll=0
  for i=1,#sched do
   if sched[i][1]<scroll then
    schedi=i+1
@@ -137,12 +140,13 @@ function drw_game()
  end
 
  for e in all(enemies) do
-  if e.layer==2 then
-   myoval(e.x,e.y+16,3,2,1)
+  if e.shads>0 then
+   drawshad(e)
+   
    --circfill(e.x,e.y+16,3,1)
   end
  end
- myoval(pspr.x,pspr.y+16,3,2,1)
+ drawshad(pspr)
   
  for l=1,2 do
 	 for e in all(enemies) do
@@ -448,8 +452,9 @@ function spread(val)
  return (rnd(2)-1)*val
 end
 
-function myoval(ox,oy,ow,oh,oc)
- ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,oc)
+function drawshad(obj)
+ local ox,oy,ow,oh=obj.x,obj.y+obj.shadh,obj.shads,obj.shads/1.5
+ ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,1)
 end
 -->8
 --gameplay
@@ -490,8 +495,12 @@ function spawnen(eni,enx,eny,enb)
   colship=en[7]>1,
   wait=0,
   dist=0,
-  bulq={}
- })
+  bulq={},
+  canc=en[8],
+  shads=en[9],
+  shadh=en[10],
+  fx=en[11]
+ },1)
 	
 end
 
@@ -525,7 +534,7 @@ function doenemies()
 	  end
 	  
 	  if e.adrt then
-	   if abs(e.adrt-e.ang)>0.5 then
+	   while abs(e.adrt-e.ang)>0.5 do
 	    e.adrt-=sgn(e.adrt-e.ang)
 	   end
 	   e.ang+=mid(-e.adrs,e.adrt-e.ang,e.adrs)
@@ -605,7 +614,7 @@ function dobrain(e,depth)
     local myclo=copylist(e)
     myclo.wait+=i*par2
     myclo.bri+=3
-    add(enemies,myclo)
+    add(enemies,myclo,1)
    end
   elseif cmd=="flw" then
    --follow

@@ -1,9 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
--- todo
- -- x brain decision on spawn level
- -- x enemy mirroring  
 
 function _init()
  autosave=true
@@ -310,6 +307,10 @@ function drawbg()
    line(selsched[3],selsched[4],selsched[3]-256,selsched[4]-256,col)
    line(selsched[3],selsched[4],selsched[3]+256,selsched[4]-256,col)
    fillp()  
+ end
+ 
+ for en in all(enemies) do 
+  drawshad(en)
  end
  
  for en in all(enemies) do
@@ -807,6 +808,11 @@ function copylist(org)
  end
  return ret
 end
+
+function drawshad(obj)
+ local ox,oy,ow,oh=obj.x,obj.y+obj.shadh,obj.shads,obj.shads/1.5
+ ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,1)
+end
 -->8
 --i/o
 function export(auto)
@@ -982,7 +988,9 @@ function genens()
 		   col=en[5],
 		   brain=en[3],
 		   age=enage,
-		   mirr=mirr
+		   mirr=mirr,
+		   shads=en[9],
+		   shadh=en[10]
 		  })
 	  end
   end

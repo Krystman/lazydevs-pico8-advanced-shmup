@@ -1,11 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---todo
-
 -- todo
 -------
-
 -- how do i fire multiple bullets
 
 function _init()
@@ -174,6 +171,10 @@ function draw_brain()
  end
  fillp()
  circ(pspr.x,pspr.y,3,5)
+ 
+ for e in all(enemies) do
+  drawshad(e)
+ end
  
  for e in all(enemies) do
   drawobj(e)
@@ -682,6 +683,11 @@ function col2(oa,ob)
  
  return true
 end
+
+function drawshad(obj)
+ local ox,oy,ow,oh=obj.x,obj.y+obj.shadh,obj.shads,obj.shads/1.5
+ ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,1)
+end
 -->8
 --i/o
 function export(auto)
@@ -1129,7 +1135,7 @@ function dobrain(e,depth)
     local myclo=copylist(e)
     myclo.wait+=i*par2
     myclo.bri+=3
-    add(enemies,myclo)
+    add(enemies,myclo,1)
    end
   elseif cmd=="flw" then
    --follow
@@ -1247,8 +1253,10 @@ function spawnen(eni,enx,eny)
   colship=en[7]>1,  
   wait=0,
   dist=0,
-  bulq={}
- })
+  bulq={},
+  shads=en[9],
+  shadh=en[10]
+ },1)
 	
 end
 
