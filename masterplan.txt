@@ -180,43 +180,41 @@ X Create a few seconds of gameplay (50secs)
 FIFTH GOAL: Final Fixes
 ---------------------------------------------
 
-- System Fixes (Dont break the level) (KINDA EASY)
-  - Schedule/Brain
-    - Brain decision on spawn level
-    - Enemy mirroring  
-    - Brain: enemy goto location command
-    - Ground Enemies
-      - Movement relative to ground
-      - Drawing order
-      - Collision
-      - Sealing?
-  - Pattern
-    - I want to easily manipulate bulloet speed
-    - We can merge spread and burst
-  - Sound
-    - Repetetive Explosions
-    - Enemy Shot sounds
-  - maybe update splash and muzz in draw?
+x System Fixes (Dont break the level) (KINDA EASY)
+  x Schedule/Brain
+    x Brain decision on spawn level
+    x Enemy mirroring  
+    x Brain: enemy goto location command
+    x Ground Enemies
+      x Movement relative to ground
+      x Drawing order
+      x Collision
+      x Sealing?
+  x Pattern
+    x I want to easily manipulate bulloet speed
+    x We can merge spread and burst
+  x Sound
+    x Repetetive Explosions
+    x Enemy Shot sounds
+  x maybe update splash and muzz in draw?
 
-- Editor Fixes (VERY EASY)
-  - Enedit: Enemy preview
-  - Aniedit: Animation preview
-  - Brainedit: Better onstaging
-  - Brainedit: Copy Brain
-  - Schedit: Move Undo?
-  - Schedit: Clickmove moves enemy not spawn
-  - Patedit: Copy pattern
-  - LOW PRIO Schedit: Breaks when no enemies
-  - LOW PRIO Brainedit: Deleting brains should be easier
+x Editor Fixes (VERY EASY)
+  x Enedit: Enemy preview
+  x Aniedit: Animation preview
+  x Brainedit: Better onstaging
+  x Brainedit: Copy Brain
+  x Schedit: Move Undo?
+  x Schedit: Clickmove moves enemy not spawn
+  x Patedit: Copy pattern
+  x LOW PRIO Brainedit: Deleting brains should be easier
 
-- New Things (MID)
-  - Dead Zones
-  - Cutoff
-  - Hover effect / Ground shadow
-  - Bullet cancelling
-  - Bullets not from center of sprite
-  - freeze / die / inviz overhaul
-
+x New Things (MID)
+  x Dead Zones
+  x Cutoff
+  x Ground shadow
+  x Bullet cancelling
+  x Bullets not from center of sprite
+  
 - Design Questions (HARD)
   - Special Ability? Bomb?
   - Do we mant a spread shot?
@@ -225,6 +223,10 @@ FIFTH GOAL: Final Fixes
   - UI for Scoring?
   - Do we need boss phases?
   - Bosss Spawning minions?
+
+- Leftover
+  - Hover effect
+  - freeze / die / inviz overhaul
 
 ---------------------------------------------
 SIXTH GOAL: Make the Game

@@ -107,6 +107,23 @@ function draw_table()
  end
  if prevspr then
   mspr(prevspr,63,25)
+  local mymnu=menu[cury][curx]
+  if mymnu.cmdy then
+   if mymnu.cmdy>=1 and mymnu.cmdy<=#enlib then
+    local myen=enlib[mymnu.cmdy] 
+    
+    if myen[12] then
+     local bx=myen[12] or 0
+     local by=myen[13] or 0
+     pset(63+bx,25+by,rnd({5,6,7}))
+    end
+    if myen[14] then
+     local bx=myen[14] or 0
+     local by=myen[15] or 0
+     pset(63+bx,25+by,rnd({5,6,7}))
+    end
+   end
+  end
  end
 
  clip()
@@ -173,7 +190,7 @@ end
 function refresh_table()
  menu={}
  
- local caps={"","ani","asp","brn","hp","col","gnd","cfl","cnc","shs","shh","fx"}
+ local caps={"","ani","asp","brn","hp","col","gnd","cfl","cnc","shs","shh","fx","b1x","b1y","b2x","b2y"}
  
  local lne={}
  for i=1,#caps do

@@ -4,9 +4,6 @@ __lua__
 
 -- main todo
 -------------------
--- bullet origin
--- retargeting?
--- enemy fire sounds
 
 function _init()
  t=0
@@ -497,9 +494,8 @@ function die2()
 end
 
 function spawnen(eni,enx,eny,enb)
- 
+ --★
  local en=enlib[abs(eni)]
- 
  add(enemies,{
   x=enx,
   y=eny,
@@ -525,7 +521,11 @@ function spawnen(eni,enx,eny,enb)
   canc=en[8],
   shads=en[9],
   shadh=en[10],
-  fx=en[11]
+  fx=en[11],
+  bul1x=en[12] or 0,
+  bul2x=en[14] or 0,
+  bul1y=en[13] or 0,
+  bul2y=en[15] or 0
  },1)
 	
 end
@@ -633,7 +633,12 @@ function dobrain(e,depth)
    end
   elseif cmd=="fir" then
    --fire
-   patshoot(e,par1,par2*e.mirr)
+   patshoot(e,par1,par2*e.mirr,e.bul1x*e.mirr,e.bul1y)
+  elseif cmd=="fr2" then
+   --fire2
+   patshoot(e,par1,par2*e.mirr,e.bul2x*e.mirr,e.bul2y)
+  elseif cmd=="snd" then
+   sfx(par1)
   elseif cmd=="clo" then
    --clone
    for i=1,par1 do
@@ -693,7 +698,7 @@ function shoot()
 	   x=i,
 	   y=-4,
 	   ani=anilib[2],
-	   plock=true
+	   plock=pspr
 	 })
  end
 
@@ -766,7 +771,7 @@ function makepat(pat,pang)
  return ret
 end
 
-function patshoot(en,pat,pang)
+function patshoot(en,pat,pang,ox,oy)
  
  if abs(pang)==99 then
   pang=atan2(pspr.y-en.y,pspr.x-en.x)
@@ -775,15 +780,25 @@ function patshoot(en,pat,pang)
  local mybuls=makepat(pat,pang)
 
  for b in all(mybuls) do
+  b.x,b.y=ox,oy
   add(en.bulq,b)
  end
 end
 
 function dobulq(en)
- local oldb=#buls
  for b in all(en.bulq) do
   if b.wait<=0 then
    if en.layer>1 or dist(pspr.x,pspr.y,en.x,en.y)>24 then
+				add(parts,{
+					draw=shwave,
+					x=b.x,
+					y=b.y,
+					c=7,
+					r=0,
+					sr=1,
+					maxage=6,
+					plock=en
+				})
 	   b.x+=en.x
 	   b.y+=en.y
 	   b.sx=sin(b.ang)*b.spd
@@ -796,12 +811,6 @@ function dobulq(en)
    b.wait-=1
   end
  end
- if oldb!=#buls then
-	 add(muzz,{
-	  en=en,
-	  r=8
-	 })
-	end
 	 
 end
 -->8
@@ -1021,7 +1030,13 @@ function spark(p)
 end
 
 function shwave(p)
- circ(p.x,p.y,p.r,p.c)
+ --★ universal plock?
+ local _x,_y=p.x,p.y
+ if p.plock then
+  _x+=p.plock.x
+  _y+=p.plock.y
+ end
+ circ(_x,_y,p.r,p.c)
 end
 
 function sprite(p)
@@ -1031,8 +1046,8 @@ function sprite(p)
  
  local _x,_y=p.x,p.y
  if p.plock then
-  _x+=pspr.x
-  _y+=py
+  _x+=p.plock.x
+  _y+=p.plock.y
  end
  mspr(cyc(p.age,p.ani,p.anis),_x,_y)
 end
@@ -1206,7 +1221,7 @@ __sfx__
 12020000129701f9703c970386703e670376703567035670376703367031670316701f63022670256702867029670146700b6700c67006670046702067024670256700b670216701d6701d630286302c62005600
 010300003a0363f0463c0161b5002250017500225001750000000175000a5000a5000050000500005000050000700007000070000700007000070000700007000070000700007000070000700007000070000700
 060300003264009600106000c600156000c600176000c6001c6000c600176000c600156000c600106000c600136000c600156000c60019600186001a60018600196000c600176000c600156000c6001060000600
-a0030000087000d700107000c700157000c700177000c7001c7000c700177000c700157000c700107000c700137000c700157000c70019700187001a70018700197000c700177000c700157000c7001070000700
+000100002115316130141200f1200c1200c1000a100091000810008100071000710006100051000c100171000c100151000c10010100001000010000100001000010000100001000010000100001000010000100
 090c00000f063184101c4101f410234101f4101c4101841017410184101c4101f410234201f4201c4101841017410184101c4101f410234201f4201c420184100f063184141c4101f410234201f4201842017420
 090c00000f063194141c4102141023420214201c4101941017414194101c4102141023420214201c420194100f033194141c4202142023430214301c420194100f063194241c420214301a440194401a4321c430
 110c00000023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300023000230002300723007230072300723007230072300723007230

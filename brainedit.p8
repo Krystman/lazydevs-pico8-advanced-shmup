@@ -44,6 +44,7 @@ function _init()
  menuitem(1,"export",export)
  
  reload(0x0,0x0,0x2000,"cowshmup.p8")
+ reload(0x3200,0x3200,0x10ff,"cowshmup.p8")
  
  curx=1
  cury=1
@@ -58,11 +59,13 @@ function _init()
   "asp",
   "got",
   "fir",
+  "fr2",
   "adr",
   "clo",
   "flw",
   "lop",
-  "mov"
+  "mov",
+  "snd"
  }
  
  execy=0
@@ -96,12 +99,11 @@ function _init()
  
  t=0
  
-
+ 
 end
 
 function _draw()
  _drw()
- 
  if #msg>0 then
   if msg[1].txt=="autosave" then
    rectfill(119,119,125,125,0)
@@ -204,7 +206,7 @@ function draw_brain()
  for m in all(muzz) do
   m.r-=1
   if m.en then
-   circfill(m.en.x,m.en.y,m.r,7)
+   circfill(m.en.x+m.x,m.en.y+m.y,m.r,7)
   end
   if m.r<=0 then
    del(muzz,m)
@@ -1128,7 +1130,17 @@ function dobrain(e,depth)
     par1=1
    end
    ------------------
-   patshoot(e,par1,par2)
+   patshoot(e,par1,par2,e.bul1x,e.bul1y)
+  elseif cmd=="fr2" then
+   --fire
+   --- ★ robustness check ---
+   if par1<1 or par1>#pats then 
+    par1=1
+   end
+   ------------------
+   patshoot(e,par1,par2,e.bul2x,e.bul2y)
+  elseif cmd=="snd" then
+   sfx(par1,3)
   elseif cmd=="clo" then
    --clone
    for i=1,par1 do
@@ -1255,7 +1267,11 @@ function spawnen(eni,enx,eny)
   dist=0,
   bulq={},
   shads=en[9],
-  shadh=en[10]
+  shadh=en[10],
+  bul1x=en[12] or 0,
+  bul1y=en[13] or 0,
+  bul2x=en[14] or 0,
+  bul2y=en[15] or 0  
  },1)
 	
 end
@@ -1373,7 +1389,7 @@ function makepat(pat,pang)
 end
 
 
-function patshoot(en,pat,pang)
+function patshoot(en,pat,pang,ox,oy)
  
  if pang==-99 then
   pang=atan2(pspr.y-en.y,pspr.x-en.x)
@@ -1382,32 +1398,33 @@ function patshoot(en,pat,pang)
  local mybuls=makepat(pat,pang)
 
  for b in all(mybuls) do
+  b.x=ox
+  b.y=oy
   add(en.bulq,b)
  end
 end
 
 function dobulq(en)
- local oldb=#buls
  for b in all(en.bulq) do
   if b.wait<=0 then
+		 add(muzz,{
+		  en=en,
+		  x=b.x,
+		  y=b.y,
+		  r=8
+		 })
 	  b.x+=en.x
 	  b.y+=en.y
 	  b.sx=sin(b.ang)*b.spd
 	  b.sy=cos(b.ang)*b.spd
 	  
    add(buls,b)
+
    del(en.bulq,b)
   else
    b.wait-=1
   end
  end
- if oldb!=#buls then
-	 add(muzz,{
-	  en=en,
-	  r=8
-	 })
-	end
-	 
 end
 
 function dobuls(arr)
@@ -1430,3 +1447,5 @@ __gfx__
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+000100000000023050230500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

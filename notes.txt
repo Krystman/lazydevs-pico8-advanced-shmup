@@ -20,6 +20,10 @@ Enemy Data
 9 Shadow Size
 10 Shadow Height
 11 FX
+12 B1X
+13 B1Y
+14 B2X
+15 B2X
 
 Spawn/Sched Data
 1 Time
