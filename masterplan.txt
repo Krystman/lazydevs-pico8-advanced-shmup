@@ -215,18 +215,26 @@ x New Things (MID)
   x Bullet cancelling
   x Bullets not from center of sprite
   
-- Design Questions (HARD)
-  - Special Ability? Bomb?
-  - Do we mant a spread shot?
-  - Pickups?
-  - Scoring?
-  - UI for Scoring?
-  - Do we need boss phases?
-  - Bosss Spawning minions?
+X Design Questions (HARD)
+  X Special Ability? Bomb?
+  X Do we mant a spread shot?
+  X Pickups?
+  X Scoring?
+  X freeze / die / inviz overhaul
+
+- Prototype Debriefing
+  - GUI (Custom Fonts)
+  - State Machine
+  - Better Shots + Options System
+  - Pickups
+  - Popups
+  - Bombs
 
 - Leftover
+  (X) UI for Scoring?
+  - Do we need boss phases?
+  - Bosss Spawning minions?
   - Hover effect
-  - freeze / die / inviz overhaul
 
 ---------------------------------------------
 SIXTH GOAL: Make the Game
