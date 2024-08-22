@@ -7,6 +7,9 @@ __lua__
 -- letting go of buttons
 -- better way to center text
 -- highscore
+-- update mspr in other editors
+-- tweak option muzzle flashes
+
 function _init()
  t=0
  debug={}
@@ -50,7 +53,8 @@ end
 
 function startgame()
  px,py=64,64
- spd=1.4
+ spd=1.9
+ shotdmg=0.7
  cutoff=90
  deadzone=8
  
@@ -82,6 +86,7 @@ function startgame()
   shads=3,
   shadh=18
  }
+ popt={}
  invul=0
  inviz=0
  freeze=0
@@ -209,7 +214,15 @@ function drw_game()
 	  if freeze>0 then
 	   pal(pal_wflash)
 	  end
+	  
+		 for p in all(popt) do
+		  drawobj(p.layer==1 and p)
+		 end
 		 drawobj(pspr)
+		 for p in all(popt) do
+		  drawobj(p.layer==2 and p)
+		 end
+		 
 		 pal() 
 		 local fframe=anilib[1][t\3%4+1]
 		 for i=-1,2,3 do
@@ -323,6 +336,10 @@ function upd_game()
  --xscroll=mid(0,(px-10)/100,1)*-16
  --2441
  
+ --options
+ local opta=(pspr.ani[1]-3)*0.04
+ popt=makeopt(pspr,2,14,-11,-11/5,0.25+opta,-2)
+ 
  if shotwait>0 then
   shotwait-=1
  else
@@ -336,10 +353,6 @@ function upd_game()
  end
  
  boss=btn(🅾️)
- 
- if t%60==0 then
-  --spawnen()
- end
  
  -- gameplay
  dobuls(shots)
@@ -365,7 +378,7 @@ function upd_game()
 			 })  
     
     if s.y>deadzone then
-     e.hp-=1
+     e.hp-=shotdmg
      e.flash=2
     end
     
@@ -459,8 +472,8 @@ end
 function mspr(si,sx,sy)
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
  sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
- if _fx==2 then
-  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ if _fx and _fx>=2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w-(_fx-2),sy-_oy,_w,_h,true)
  end
  
  if _nx then
@@ -509,6 +522,7 @@ function cyc(age,arr,anis)
 end
 
 function drawobj(obj)
+ if not obj then return end
  mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
  
  --★
@@ -584,6 +598,27 @@ function wait(_wait)
 end
 -->8
 --gameplay
+
+function makeopt(_org,_num,_ani,_radx,_rady,_ang,_yoff)
+ arr={}
+ --4091
+ for i=0,_num-1 do
+  --★
+  local opang=_ang+i*(1/_num)
+  local _px=sin(opang)*_radx
+	 add(arr,{
+	  x=_org.x+_px+(_px>0 and 1 or 0),
+	  y=_org.y+_yoff+cos(opang)*_rady,
+	  ani=anilib[_ani],
+	  anis=1,
+	  age=t,
+	  layer=cos(opang)<0 and 1 or 2
+	 })
+	 
+ end
+
+ return arr
+end
 
 function die()
  freeze=30
@@ -809,7 +844,7 @@ function shoot()
   add(shots,{
    x=pspr.x+i,
    y=py-14,
-   sx=0,
+   sx=sgn(i)*0.2,
    sy=shotspd,
    ani=anilib[3],
    anis=2,
@@ -825,7 +860,28 @@ function shoot()
 	   plock=pspr
 	 })
  end
-
+ for p in all(popt) do
+  add(shots,{
+   x=p.x,
+   y=p.y-14,
+   sx=1.1*sgn(p.x-pspr.x),
+   sy=shotspd,
+   ani=anilib[15],
+   anis=2,
+   age=1,
+   col=myspr[29]
+  })
+	 add(parts,{
+	  draw=sprite,
+	  maxage=5,
+	  x=0,
+	  y=-4,
+	  ani=anilib[2],
+	  plock=p
+	 }) 
+ end
+ 
+ 
  sfx(0,3)
 end
 
@@ -1186,28 +1242,28 @@ __gfx__
 00e1c111c111e000e11c111c111e000e111c1197a79a79707777707777000077700000000fff077779000a70000000000000ccc00000eee000000eeeeee00070
 00e1c111c171e000e11c111c171e000e171c119aa79a79a00777777777000077700000000fff007779000a0000000000000c777c000e777e0000e776677e0777
 0e11cc171161e00e161cc117161e000e1611719aa799a9a00077077777070077707000007ffffffff00000000900000000c66777c0e66666e00e77666677e7c7
-0e1d1c711d6d1e0e16d1c77116d1e0e1d6d1179a9a99a9afffff007777000077700000007ffffffff0900000000000000c776667c0e776677e0e77677767e070
-e1ddd111d6d7d1e1dddd1111dd671e176d6d11999a99999fffff007777000007700000077ffffffff009000000000000c7767776ce77776777ee76777776e000
-e1dd6ddd6d66d1e1dd66dddd6d661e1666d6dd999a99999fffff000777000000700000077fffffffffffff00dd00cc00c7677777ce77776777e0e677777e0070
-e1d676676d6dd1e1d6676676d6dd1e1dd6d676909999999fffff000077fffffff00000007fffffffffffff0d76dcb7c0c7677777ce77776777e00e77777e0fff
-0e176d167d111e0e117dd1171111e0e1111716900990909fffffffffffffffffffffffffffffffffffffffd777dc777c0c677777c0e776677e0000e777e00fff
-00e151155d11e000e1655155d11e000ee16151000900909fffffffffffffffffffffffffffffffffffffffd67d00c7bc00cc777c000eeeeee000000eee000fff
-000e1111111e00000e11111111e000000e1111ffffffffffffffffffffffffffffffffffffffffffffffff0dd0000cc00000ccc00fffffffffffffffffffffff
-0000eeeeeee0000000eeeeeeee00000000eeeeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0e1d1c711d6d1e0e16d1c77116d1e0e1d6d1179a9a99a9a000ee007777000077700000007ffffffff0900000000000000c776667c0e776677e0e77677767e070
+e1ddd111d6d7d1e1dddd1111dd671e176d6d11999a9999900e11007777000007700000077ffffffff009000000000000c7767776ce77776777ee76777776e000
+e1dd6ddd6d66d1e1dd66dddd6d661e1666d6dd999a999990e151000777000000700000077fffffffffffff00dd00cc00c7677777ce77776777e0e677777e0070
+e1d676676d6dd1e1d6676676d6dd1e1dd6d6769099999990e151000077fffffff00000007fffffffffffff0d76dcb7c0c7677777ce77776777e00e77777e0fff
+0e176d167d111e0e117dd1171111e0e11117169009909090e111ffffffffffffffffffffffffffffffffffd777dc777c0c677777c0e776677e0000e777e00fff
+00e151155d11e000e1655155d11e000ee16151000900909e1d67ffffffffffffffffffffffffffffffffffd67d00c7bc00cc777c000eeeeee000000eee000fff
+000e1111111e00000e11111111e000000e1111fffffffffe1667ffffffffffffffffffffffffffffffffff0dd0000cc00000ccc00fffffffffffffffffffffff
+0000eeeeeee0000000eeeeeeee00000000eeeefffffffffe16ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0990fffffffffffffffffffffffffffffffffffffffffffe1d11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779fffffffffffffffffffffffffffffffffffffffffff0e1ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779fffffffffffffffffffffffffffffffffffffffffff00e11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779fffffffffffffffffffffffffffffffffffffffffff000eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9999ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0990ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0990ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

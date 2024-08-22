@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 41
+version 42
 __lua__
 --todo
 -- direct spritemap selection
@@ -511,8 +511,8 @@ end
 function mspr(si,sx,sy)
  local ms=myspr[si]
  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5],sy-ms[6],ms[3],ms[4],ms[7]==1)
- if ms[7]==2 then
-  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5]+ms[3],sy-ms[6],ms[3],ms[4],true)
+ if ms[7] and ms[7]>=2 then
+  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5]+ms[3]-(ms[7]-2),sy-ms[6],ms[3],ms[4],true)
  end
  
  if ms[8] then
