@@ -4,10 +4,9 @@ __lua__
 
 -- main todo
 -------------------
--- pickups
--- - spawn pickups
--- - update pickups
--- - draw pickups
+-- lock player to screen
+
+-- bombs
 
 -- letting go of buttons
 -- better way to center text
@@ -216,7 +215,13 @@ function drw_game()
  
  --pickups
  for p in all(picks) do
-  oval2(p.x,p.y,7+sin(time()*4),7+cos(time()*4),7)
+  if p.magnet then
+   line(p.x,p.y,p.x-p.sx*5,p.y-p.sy*5,7)
+  end
+ 
+  if not p.star then
+   oval2(p.x,p.y,7+sin(time()*4),7+cos(time()*4),7)
+  end
   
   drawobj(p)
  end
@@ -265,7 +270,7 @@ function drw_game()
  shprint("웃"..lives,2,119,7)
  poke(0x5f58,0)
  
- --debug[1]=scroll
+ debug[1]=#picks
 end
 
 function drw_menu()
@@ -399,7 +404,7 @@ function upd_game()
     
     
     if e.hp<=0 then
-     spawnpick(e.x,e.y)
+     spawnpick(e.x,e.y,1,false)
      score+=0x.0001*500
      del(enemies,e)
      explode(e.x,e.y)
@@ -623,27 +628,68 @@ function dopicks()
  for p in all(picks) do
   p.age+=1
   
-  local psx=sin(time()/8+p.age/120)/2
-  local psy=1+cos(time()/8+p.age/120)/4
-  p.sx+=(psx-p.sx)/10
-  p.sy+=(psy-p.sy)/10
+  if p.magnet then
+   local ang=atan2(pspr.y-p.y,pspr.x-p.x)
+   p.sx+=sin(ang)*0.3
+   p.sy+=cos(ang)*0.3
+   
+   local spd=dist(0,0,p.sx,p.sy)
+   if spd>4 then
+    p.sx/=spd/4
+    p.sy/=spd/4   
+   end
+   
+  else 
+	  local psx=sin(time()/8+p.age/120)/2
+	  local psy=1+cos(time()/8+p.age/120)/4
+	  p.sx+=(psx-p.sx)/10
+	  p.sy+=(psy-p.sy)/10
+  end
   
   p.x+=p.sx
   p.y+=p.sy
   
+  if p.y>135 then
+   del(picks,p)
+  else
+	  p.dist=dist(p.x,p.y,pspr.x,pspr.y)  
+	  if p.dist<32 then
+	   del(picks,p)
+	   sfx(63)
+	   add(parts,{
+	    draw=shwave,
+	    x=p.x,
+	    y=p.y,
+	    c=7,
+	    r=6,
+	    sr=2.5,
+	    maxage=6
+	   })
+	  elseif p.dist<64 then
+	   p.magnet=true
+	  end
+  end
  end
 end
 
-function spawnpick(px,py)
- add(picks,{
-  x=px,
-  y=py,
-  age=0,
-  sx=0,
-  sy=1,
-  ani=anilib[16],
-  anis=6
- })
+function spawnpick(px,py,pnum,pstar)
+ 
+ local fullang=0.1*(pnum-1)
+ local ang=atan2(pspr.y-py,pspr.x-px)-fullang/2
+ 
+ for i=0,pnum-1 do
+  local ang2=ang+i*0.1
+	 add(picks,{
+	  x=px,
+	  y=py,
+	  age=0,
+	  sx=-sin(ang2)*4,
+	  sy=-4-cos(ang2),
+	  ani=anilib[pstar and 17 or 16],
+	  anis=6,
+	  star=pstar
+	 })
+ end
 
 end
 
@@ -1506,7 +1552,7 @@ __sfx__
 1108000018673275531f5531b5532250017553225001754300000175430a5000a5000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
 01010000266002d60033600316002e60021600166000e6000c6000b60019600246001c60009600066000960011600106000a60000600006000060000000000000000000000000000000000000000000000000000
 a501000009900389003590036900329002f9002d90026900229001c90019900179001590012900109000e9000a900069000290002900049000590004900059000590004900029000190000900029000090001900
-090100002930029300293001d40026300386003860001000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+080100001f720237302a740347503f7201c7203870001700007000270000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700
 __music__
 00 0a150857
 00 0b091757
