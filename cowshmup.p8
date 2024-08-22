@@ -4,6 +4,11 @@ __lua__
 
 -- main todo
 -------------------
+-- pickups
+-- - spawn pickups
+-- - update pickups
+-- - draw pickups
+
 -- letting go of buttons
 -- better way to center text
 -- highscore
@@ -74,7 +79,8 @@ function startgame()
  shots={}
  shotwait=0
  enemies={}
- buls={} 
+ buls={}
+ picks={} 
  schedi=1
  
  pspr={
@@ -100,6 +106,7 @@ function startgame()
  _drw=drw_game
  
  music(0)
+ 
  
  --★
  
@@ -205,6 +212,13 @@ function drw_game()
 			end
    p.draw(p)
   end
+ end
+ 
+ --pickups
+ for p in all(picks) do
+  oval2(p.x,p.y,7+sin(time()*4),7+cos(time()*4),7)
+  
+  drawobj(p)
  end
  
  --ship
@@ -358,6 +372,7 @@ function upd_game()
  dobuls(shots)
  dobuls(buls)
  doenemies()
+ dopicks()
  
  -- collions
  -- shots vs enemies
@@ -384,6 +399,7 @@ function upd_game()
     
     
     if e.hp<=0 then
+     spawnpick(e.x,e.y)
      score+=0x.0001*500
      del(enemies,e)
      explode(e.x,e.y)
@@ -596,8 +612,41 @@ function wait(_wait)
   flip()
  until _wait<0
 end
+
+function oval2(ox,oy,ow,oh,oc)
+ oval(ox-ow,oy-oh,ox+ow,oy+oh,oc)
+end
 -->8
 --gameplay
+
+function dopicks()
+ for p in all(picks) do
+  p.age+=1
+  
+  local psx=sin(time()/8+p.age/120)/2
+  local psy=1+cos(time()/8+p.age/120)/4
+  p.sx+=(psx-p.sx)/10
+  p.sy+=(psy-p.sy)/10
+  
+  p.x+=p.sx
+  p.y+=p.sy
+  
+ end
+end
+
+function spawnpick(px,py)
+ add(picks,{
+  x=px,
+  y=py,
+  age=0,
+  sx=0,
+  sy=1,
+  ani=anilib[16],
+  anis=6
+ })
+
+end
+
 
 function makeopt(_org,_num,_ani,_radx,_rady,_ang,_yoff)
  arr={}
@@ -1248,18 +1297,18 @@ e1dd6ddd6d66d1e1dd66dddd6d661e1666d6dd999a999990e151000777000000700000077fffffff
 e1d676676d6dd1e1d6676676d6dd1e1dd6d6769099999990e151000077fffffff00000007fffffffffffff0d76dcb7c0c7677777ce77776777e00e77777e0fff
 0e176d167d111e0e117dd1171111e0e11117169009909090e111ffffffffffffffffffffffffffffffffffd777dc777c0c677777c0e776677e0000e777e00fff
 00e151155d11e000e1655155d11e000ee16151000900909e1d67ffffffffffffffffffffffffffffffffffd67d00c7bc00cc777c000eeeeee000000eee000fff
-000e1111111e00000e11111111e000000e1111fffffffffe1667ffffffffffffffffffffffffffffffffff0dd0000cc00000ccc00fffffffffffffffffffffff
-0000eeeeeee0000000eeeeeeee00000000eeeefffffffffe16ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-0990fffffffffffffffffffffffffffffffffffffffffffe1d11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779fffffffffffffffffffffffffffffffffffffffffff0e1ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779fffffffffffffffffffffffffffffffffffffffffff00e11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779fffffffffffffffffffffffffffffffffffffffffff000eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9779ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+000e1111111e00000e11111111e000000e1111000007fffe1667ffffffffffffffffffffffffffffffffff0dd0000cc00000ccc00fffffffffffffffffffffff
+0000eeeeeee0000000eeeeeeee00000000eeee000074fffe16ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+0990007777700007770000000770000777700077774afffe1d11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+977907111117007111700000711700711117007444aafff0e1ddffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779717117717071711700071771771171117074aaaafff00e11ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779717177111771711170071111771171711774aaaafff000eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+97790711111117711717170711717071177117074aaaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9779071771711771717117071771707171171774aa99ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+97790070070770077111117711117007071717749944ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffff007171170711117000071770744447ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9ffffffffff000707700071170000007000777770ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+9aa9fffffffffffffffffff007700fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 9aa9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 9999ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 0990ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
