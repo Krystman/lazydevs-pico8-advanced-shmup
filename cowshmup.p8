@@ -4,9 +4,9 @@ __lua__
 
 -- main todo
 -------------------
--- lock player to screen
-
 -- bombs
+
+-- lock player to screen
 
 -- letting go of buttons
 -- better way to center text
@@ -41,6 +41,8 @@ function _init()
  freeze=0
  score=1
 
+ pers=0.85
+ 
  _upd=upd_menu
  _drw=drw_menu
  
@@ -95,6 +97,9 @@ function startgame()
  invul=0
  inviz=0
  freeze=0
+ 
+ bombrs=-1
+ bombrd=-1
  
  -- gameplay
  score=0
@@ -173,6 +178,12 @@ function drw_game()
   end
  end
  drawshad(pspr)
+ 
+ -- bomb shadow
+ if bombrs>0 then
+ 	oval2(bombx,bomby+2,bombrs+3,bombrs*pers+2,1)
+ 	oval2(bombx,bomby+2,bombrs+1,bombrs*pers,1,ovalfill)
+ end
   
  for l=1,2 do
 	 for e in all(enemies) do
@@ -212,6 +223,35 @@ function drw_game()
    p.draw(p)
   end
  end
+ 
+ -- bomb dome
+ if bombrd>0 then
+ 	--oval2(bombx,bomby,bombrs+3,bombrs*pers+2,1)
+ 	oval2(bombx,bomby,bombrs,bombrs*pers,7,ovalfill)
+ 	clip(0,0,128,bomby)
+ 	circfill(bombx,bomby,bombrd,7)
+ 	clip()
+ 	
+ 	--★★★★
+ 	--streaks
+ 	for i=1,7 do
+ 	 local ang=0.5/7*i-0.29
+ 	 local ax=sin(ang)*bombrd
+ 	 local ay=cos(ang)*bombrd*pers
+ 	 for j in all({0.3,0.6}) do
+ 	  clip(ax<0 and bombx+ax+xscroll or bombx+xscroll,
+ 	       bomby+ay-j*bombrd,
+ 	       abs(ax)+1,
+ 	       j*bombrd+2)
+ 	  oval2(bombx,bomby+ay/2,ax,bombrd*pers+ay,6)
+ 		 fillp(▒) 
+ 		 clip()
+ 	 end
+ 	 fillp()
+ 	end
+ 	
+ end
+
  
  --pickups
  for p in all(picks) do
@@ -292,7 +332,7 @@ end
 --update
 
 function upd_game()
-
+ score=60000
  --scrolling
  scroll+=0.2
   
@@ -368,10 +408,9 @@ function upd_game()
  end
  
  if btnp(🅾️) then
-  explode(64,64)
+  bomb()
  end
  
- boss=btn(🅾️)
  
  -- gameplay
  dobuls(shots)
@@ -612,15 +651,17 @@ function fadeout(spd,_wait)
 end
 
 function wait(_wait)
- repeat
-  _wait-=1
-  flip()
- until _wait<0
+ for i=1,_wait do
+  flip() 
+ end
 end
 
-function oval2(ox,oy,ow,oh,oc)
- oval(ox-ow,oy-oh,ox+ow,oy+oh,oc)
+function oval2(ox,oy,ow,oh,oc,func)
+ local func=func or oval
+ func(ox-ow,oy-oh,ox+ow,oy+oh,oc)
 end
+
+
 -->8
 --gameplay
 
@@ -693,9 +734,8 @@ function spawnpick(px,py,pnum,pstar)
 
 end
 
-
 function makeopt(_org,_num,_ani,_radx,_rady,_ang,_yoff)
- arr={}
+ local arr={}
  --4091
  for i=0,_num-1 do
   --★
@@ -1325,6 +1365,21 @@ function sprite(p)
   _y+=p.plock.y
  end
  mspr(cyc(p.age,p.ani,p.anis),_x,_y)
+end
+-->8
+-- bomb
+
+function bomb()
+ -- x bottom oval
+ --   top circl
+ --   lines
+
+ bombx=64
+ bomby=64
+  
+ bombrs=32
+
+ bombrd=bombrs
 end
 __gfx__
 000000ee0000000000000ee00000000000000e0009009090000700000700070000000700000a0000900000090090000000ccc00000880000ddd0008980070070
