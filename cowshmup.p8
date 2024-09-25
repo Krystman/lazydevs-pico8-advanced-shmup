@@ -5,6 +5,12 @@ __lua__
 -- main todo
 -------------------
 -- bombs
+-- - sound effects
+-- - bomb hurting enemies
+-- - bomb converting shots
+-- - exit bomb earlier
+-- - lingering shadow bug
+
 
 -- lock player to screen
 
@@ -97,6 +103,7 @@ function startgame()
  invul=0
  inviz=0
  freeze=0
+ flashship=false
  
  bombrs=-1
  bombrd=-1
@@ -182,7 +189,7 @@ function drw_game()
  -- bomb shadow
  if bombrs>0 then
  	oval2(bombx,bomby+2,bombrs+3,bombrs*pers+2,1)
- 	oval2(bombx,bomby+2,bombrs+1,bombrs*pers,1,ovalfill)
+ 	oval2(bombx,bomby+2,bombrd+1,bombrd*pers,1,ovalfill)
  end
   
  for l=1,2 do
@@ -225,31 +232,38 @@ function drw_game()
  end
  
  -- bomb dome
- if bombrd>0 then
- 	--oval2(bombx,bomby,bombrs+3,bombrs*pers+2,1)
- 	oval2(bombx,bomby,bombrs,bombrs*pers,7,ovalfill)
- 	clip(0,0,128,bomby)
- 	circfill(bombx,bomby,bombrd,7)
- 	clip()
- 	
- 	--★★★★
- 	--streaks
- 	for i=1,7 do
- 	 local ang=0.5/7*i-0.29
- 	 local ax=sin(ang)*bombrd
- 	 local ay=cos(ang)*bombrd*pers
- 	 for j in all({0.3,0.6}) do
- 	  clip(ax<0 and bombx+ax+xscroll or bombx+xscroll,
- 	       bomby+ay-j*bombrd,
- 	       abs(ax)+1,
- 	       j*bombrd+2)
- 	  oval2(bombx,bomby+ay/2,ax,bombrd*pers+ay,6)
- 		 fillp(▒) 
- 		 clip()
- 	 end
- 	 fillp()
+ if bombrd>0 and bombdme>0 then
+  local domesin=sin(bombdme/4)
+  local domeh=(1-bombdme)*bombrd*pers
+  
+ 	oval2(bombx,bomby-domeh,bombrd*domesin,bombrd*pers*domesin,7,ovalfill)
+ 	--oval2(bombx,bomby,bombrd,bombrd*pers,7,ovalfill)
+ 	if bombdme>0.8 then
+	 	clip(0,0,128,bomby)
+	 	circfill(bombx,bomby,bombrd,7)
+	 	clip()
+	 	
+	 	--★★★★
+	 	--streaks
+	 	if bombdme==1 then
+		 	for i=1,8 do
+		 	 local ang=0.5/8*i-0.29
+		 	 local ax=sin(ang)*bombrd
+		 	 local ay=cos(ang)*bombrd*pers
+		 	 for j in all({0.3,0.6}) do
+		 	  clip(ax<0 and bombx+ax+xscroll or bombx+xscroll,
+		 	       bomby+ay-j*bombrd,
+		 	       abs(ax)+1,
+		 	       j*bombrd+2)
+		 	  oval2(bombx,bomby+ay/2,ax,bombrd*pers+ay,6)
+		 		 fillp(▒) 
+		 		 clip()
+		 	 end
+		 	 fillp()
+		 	end
+	 	end
  	end
- 	
+
  end
 
  
@@ -270,7 +284,7 @@ function drw_game()
  if inviz<=0 then
 	 if invul<=0 or (time()*9)%1<0.5 then
 	 	pal(14,12)
-	  if freeze>0 then
+	  if flashship then
 	   pal(pal_wflash)
 	  end
 	  
@@ -757,6 +771,7 @@ end
 
 function die()
  freeze=30
+ flashship=true
  callback=die2
  sfx(5)
 end
@@ -766,6 +781,7 @@ function die2()
  inviz=30
  invul=150
  lives-=1
+ flashship=false
  if lives<0 then
   lives=0
   inviz=60
@@ -1370,16 +1386,70 @@ end
 -- bomb
 
 function bomb()
- -- x bottom oval
- --   top circl
- --   lines
-
- bombx=64
- bomby=64
-  
- bombrs=32
-
+ bombx=pspr.x
+ bomby=pspr.y
+ flashship=true
+ 
+ 
+ bombrs=0
  bombrd=bombrs
+ 
+ bombdme=0
+ 
+ bombphase=1
+ 
+ freeze=2060
+ callwhile=bombwhile
+ callback=bombend
+ 
+ bombt=0
+ bombspd=0
+end
+
+function bombwhile()
+ -- 1: grow shadow
+ -- 2: dome descend
+ -- 3: flash shockwave
+ -- 4: shrink
+ bombt+=1
+ if bombphase==1 then
+  bombrs+=(40-bombrs)/10
+  bombrd=bombrs
+  if bombt>20 then
+   bombphase=2
+  end
+ elseif bombphase==2 then
+  bombrs+=(40-bombrs)/10
+  bombrd=bombrs
+  
+	 bombdme+=bombspd
+	 bombspd+=0.02
+	 if bombdme>1 then
+	  bombdme=1
+	  bombphase=3
+	  fadeperc=0.5
+	  bombspd=0.2
+	 end  
+ elseif bombphase==3 then
+  bombrd-=bombspd
+  bombrs+=bombspd*8
+  bombspd=bombspd+0.1
+  if bombrd<=0 then
+   freeze=0
+  end
+ else
+ 
+ end
+ 
+ --bombrs+=1
+ --bombrd=bombrs
+end
+
+function bombend()
+ flashship=false
+
+	bombrd=0
+	bombrs=0
 end
 __gfx__
 000000ee0000000000000ee00000000000000e0009009090000700000700070000000700000a0000900000090090000000ccc00000880000ddd0008980070070
