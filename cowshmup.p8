@@ -4,12 +4,8 @@ __lua__
 
 -- main todo
 -------------------
-
--- gameplay pass 
--- damage values?
--- offscreen pickups check
--- lock player to screen
-
+-- proximity kill rewards
+  
 -- letting go of buttons
 -- better way to center text
 -- highscore
@@ -41,7 +37,7 @@ function _init()
  fadeperc=0
  
  freeze=0
- score=1
+ score=0
 
  pers=0.85
  
@@ -63,6 +59,7 @@ function startgame()
  px,py=64,64
  spd=1.9
  shotdmg=0.7
+ bombdmg=40
  cutoff=90
  deadzone=8
  
@@ -341,7 +338,6 @@ end
 --update
 
 function upd_game()
- score=60000
  --scrolling
  scroll+=0.2
   
@@ -385,11 +381,11 @@ function upd_game()
   px=flr(px)+0.5
   py=flr(py)+0.5
  end
-  
- px+=dirx[dir]*spd
- py+=diry[dir]*spd
- local dshipspr=mysgn(dirx[dir])
-  
+   
+ px=mid(3, px+dirx[dir]*spd,123)
+ py=mid(12,py+diry[dir]*spd,120)
+ 
+ local dshipspr=mysgn(dirx[dir])  
  shipspr+=mysgn(dshipspr-shipspr)*0.15
  shipspr=mid(-1,shipspr,1)
  
@@ -408,6 +404,7 @@ function upd_game()
  local opta=(pspr.ani[1]-3)*0.04
  popt=makeopt(pspr,2,14,-11,-11/5,0.25+opta,-2)
  
+ shotframe=false
  if shotwait>0 then
   shotwait-=1
  else
@@ -433,6 +430,18 @@ function upd_game()
  -- shots vs enemies
  local hashit=false
  for e in all(enemies) do
+ 	--aura 
+ 	--★
+ 	if shotframe then
+	 	pspr.col=myspr[63]
+			if col2(pspr,e) then
+	  	if e.y>deadzone then
+	  	 hashit=not hitenemy(e,shotdmg) or hashit
+	 	 end   	
+	 	end
+	 	pspr.col=myspr[28]
+ 	end
+ 	
   for s in all(shots) do
    if e.colshot and not s.delme and e.hp>0 and col2(e,s) then
     
@@ -448,7 +457,7 @@ function upd_game()
 			 })  
     
     if s.y>deadzone then
-     hashit=hashit or not hitenemy(e,shotdmg)
+     hashit=not hitenemy(e,shotdmg) or hashit
     end   
    end
   end
@@ -646,13 +655,33 @@ end
 -->8
 --gameplay
 
-function hitenemy(e,dmg)
+function hitenemy(e,dmg,bomb)
  e.hp-=dmg
  e.flash=2
  
  if e.hp<=0 then
-  spawnpick(e.x,e.y,1,false)
-  score+=0x.0001*500
+  local d=dist(e.x,e.y,pspr.x,pspr.y)
+  local cows,mult=0,1
+  
+  if not bomb then
+	  if d<29 then
+	   mult=4
+	   cows=1
+	  elseif d<43 then
+	   mult=3
+	   cows=1
+	  elseif d<58 then
+	   mult=2
+	  end
+		end
+		
+  cows=max(cows,e.cows)
+  
+  if cows>0 then
+  	spawnpick(e.x,e.y,cows,false)
+  end
+  
+  score+=0x.0001*e.score*mult
   del(enemies,e)
   explode(e.x,e.y)
   if e.canc>0 then
@@ -692,6 +721,10 @@ function dopicks()
   
   p.x+=p.sx
   p.y+=p.sy
+  if p.x<3 or p.x>132 then
+   p.sx=-p.sx
+			p.x=mid(3,p.x,132)
+  end
   
   if p.y>135 then
    del(picks,p)
@@ -818,10 +851,12 @@ function spawnen(eni,enx,eny,enb)
   shads=en[9],
   shadh=en[10],
   fx=en[11],
-  bul1x=en[12] or 0,
-  bul2x=en[14] or 0,
-  bul1y=en[13] or 0,
-  bul2y=en[15] or 0
+  score=en[12],
+  cows=en[13],
+  bul1x=en[14] or 0,
+  bul2x=en[16] or 0,
+  bul1y=en[15] or 0,
+  bul2y=en[17] or 0
  },1)
 	
 end
@@ -973,7 +1008,7 @@ end
 
 function shoot()
  --slowmo=true
- 
+ shotframe=true
  local shotspd=-6
  shotwait=2
  
@@ -1464,7 +1499,7 @@ function bombend()
 	
 	for e in all(enemies) do
 		if dist(bombx,bomby,e.x,e.y)<bombrange+8 then
-		 hitenemy(e,100)
+		 hitenemy(e,bombdmg,true)
 		end
 	end
 	

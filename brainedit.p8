@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 41
+version 42
 __lua__
 -- todo
 -------
@@ -1268,10 +1268,10 @@ function spawnen(eni,enx,eny)
   bulq={},
   shads=en[9],
   shadh=en[10],
-  bul1x=en[12] or 0,
-  bul1y=en[13] or 0,
-  bul2x=en[14] or 0,
-  bul2y=en[15] or 0  
+  bul1x=en[14] or 0,
+  bul1y=en[15] or 0,
+  bul2x=en[16] or 0,
+  bul2y=en[17] or 0  
  },1)
 	
 end

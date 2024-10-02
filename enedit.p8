@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 41
+version 42
 __lua__
 
 function _init()
@@ -112,14 +112,14 @@ function draw_table()
    if mymnu.cmdy>=1 and mymnu.cmdy<=#enlib then
     local myen=enlib[mymnu.cmdy] 
     
-    if myen[12] then
-     local bx=myen[12] or 0
-     local by=myen[13] or 0
-     pset(63+bx,25+by,rnd({5,6,7}))
-    end
     if myen[14] then
      local bx=myen[14] or 0
      local by=myen[15] or 0
+     pset(63+bx,25+by,rnd({5,6,7}))
+    end
+    if myen[16] then
+     local bx=myen[16] or 0
+     local by=myen[17] or 0
      pset(63+bx,25+by,rnd({5,6,7}))
     end
    end
@@ -190,7 +190,7 @@ end
 function refresh_table()
  menu={}
  
- local caps={"","ani","asp","brn","hp","col","gnd","cfl","cnc","shs","shh","fx","b1x","b1y","b2x","b2y"}
+ local caps={"","ani","asp","brn","hp","col","gnd","cfl","cnc","shs","shh","fx","scr","cow","b1x","b1y","b2x","b2y"}
  
  local lne={}
  for i=1,#caps do
