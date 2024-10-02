@@ -5,13 +5,7 @@ __lua__
 -- main todo
 ------------------- 
 -- hyper
--- - star scoring mechanism
--- - ui for hyper
---   - hyper end warning
---   - bomb ready indicator
--- - ui for scoring
 -- - direct bomb
-
 -- letting go of buttons
 -- better way to center text
 -- highscore
@@ -115,12 +109,19 @@ function startgame()
  
  -- hyper
  hyper=false
+ linger=0
  charge=200
  chargemax=400
  chargethrs=200
  hypermult=1.5
  ch_pick=13
  ch_hit=0.3
+ hasbomb=false
+ 
+ --scoring
+ starval=0
+ starcount=0
+ lastscore=0
  
  callwhile=abs
  _upd=upd_game
@@ -131,8 +132,8 @@ function startgame()
  
  --★
  
- --scroll=208
- scroll=420
+ --scroll=220
+ scroll=0
  --scroll=0
  for i=1,#sched do
   if sched[i][1]<scroll then
@@ -307,6 +308,17 @@ function drw_game()
 	    fillp(▒)
 	    circ(pspr.x,pspr.y+2,11+sin(time()*3)*2,7)
 	    fillp()
+	    if charge<40 then
+	     if t%4<2 then
+	      pal(pal_wflash)
+	     end
+	    elseif charge<80 then
+	     if t%8<4 then
+	      pal(pal_wflash)
+	     end
+	    end
+	   elseif hasbomb and t%8<4 then
+	    pal(14,rnd({6,7}))
 	   end
 	  end
 	  
@@ -344,16 +356,49 @@ function drw_game()
  camera()
  
  --gui
-
+ 
+ --charge bar
+ local flashcol=7
+ if hasbomb and not hyper then
+  flashcol=rnd({7,6})
+  print("ready!",2,8,flashcol)
+ end
+ rect(2,2,43,6,7)
+ line(4,4,4+charge/chargemax*37,4,flashcol)
+ pset(22,3,7)
+ pset(22,5,7)
+ 
  poke(0x5f58,0x81)
- local myscr=addspace(tostr(score,0x2))
+ --score
+ local myscr=addspace(tostr(score,0x2)) 
+ shprint(myscr,126-scrlen(myscr),2,7) 
  
- shprint(myscr,126-scrlen(myscr),2,7)
- 
- 
+ --lives
  shprint("웃"..lives,2,119,7)
+ 
+ -- star value 
+ if linger>0 then
+  linger-=1
+  if hyper or t%4<3 then
+	  mspr(61,120,21)
+	  myscr=addspace(tostr(starval,0x2))
+	  shprint(myscr,114-scrlen(myscr),19,10)
+  end
+ end
+ 
  poke(0x5f58,0)
  
+ -- score history
+ if lastscore>0 then
+  local txt="+"..tostr(lastscore,0x2)
+  print(txt,127-#txt*4,10,7)
+ end
+ 
+ -- star count 
+ if linger>0 and starcount>0 then
+  local txt="★"..starcount
+  print(txt,123-#txt*4,28,7) 
+ end
 end
 
 function drw_menu()
@@ -441,6 +486,7 @@ function upd_game()
  local opta=(pspr.ani[1]-3)*0.04
  popt=makeopt(pspr,2,14,-11,-11/5,0.25+opta,-2)
  
+ hasbomb=charge>=chargethrs
  shotframe=false
  if shotwait>0 then
   shotwait-=1
@@ -454,7 +500,7 @@ function upd_game()
   if hyper then
    bomb()
   else
-	  if charge>=chargethrs then
+	  if hasbomb then
 	   hyperon()
 	  end
   end
@@ -470,6 +516,7 @@ function upd_game()
   fadebomb()
  end
  if hyper then
+  linger=200
   charge-=1
   if charge<=0 then
    hyperoff()
@@ -542,8 +589,7 @@ function upd_game()
  	_upd=upd_gover
 		_drw=drw_gover
  end
-  
- debug[1]=charge
+
 end
 
 function upd_menu()
@@ -714,8 +760,7 @@ function hitenemy(e,dmg,bomb)
  
  if e.hp<=0 then
   local d=dist(e.x,e.y,pspr.x,pspr.y)
-  local cows,mult=0,1
-  
+  local cows,mult=hyper and 1 or 0,1
   if not bomb then
 	  if d<29 then
 	   mult=4
@@ -734,7 +779,12 @@ function hitenemy(e,dmg,bomb)
   	spawnpick(e.x,e.y,cows,hyper)
   end
   
-  score+=0x.0001*e.score*mult
+  local scr=0x.0001*e.score*mult
+  score+=scr
+  lastscore=scr
+  if hyper then
+   starval+=scr
+  end
   del(enemies,e)
   explode(e.x,e.y)
   
@@ -836,7 +886,10 @@ function dopicks()
 		   })
 		   
 		   charge=min(chargemax,charge+ch_pick)
-
+					if p.star then
+						score+=starval
+						starcount+=1
+					end
 	   end
 	  end
   end
@@ -1150,7 +1203,7 @@ function shoot()
 	 }) 
  end
  
- sfx(hyper and 1 or 0,3)
+ sfx(hyper and 58 or 0,3)
 end
 
 function makepat(pat,pang)
@@ -1527,12 +1580,16 @@ end
 function hyperon()
  freeze=30
  flashship=true
+ starval=0
+ starcount=0
+ 
  sfx(60)
  hycirc={}
  for i=0,5 do
   add(hycirc,100+i*60)
  end
 
+ 
  callwhile=function()
 	 for i=1,6 do
 	  hycirc[i]+=(2-hycirc[i])/8
@@ -1814,7 +1871,7 @@ e6e6e6e8e6e6e6e6e6e6e6e6e6e6e6e6e6e6e4f0e4f0e0e2c0e1e0e2c0e1e0e5e0f0e4f0c0c0c0c0
 e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6f0e4f0e4f0e0e5e0f0e0e5e0f0e4f0e4f09e9ec0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c09ef0e4f0e4f0e4f0e4f0e4f0e4f0e4f0e4f09ed8c4c4c4c4c4c4d9c2c3d8c4c4c4c4c4c4d9d8c4d9a6a7d8c4d9d8c4d9d8c4d9d8c4d9d8c0e9e9e9e9e9e9e9e9e9e9e9e9b3e9e9e9c00000
 __sfx__
 1507000030013320132c0132c013386030b1000b10000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100
-1507000030513325132c5132c513385030b5000b50000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
+4d0600001a660356502a6402d6402e6402564024620166201f620306201a62012620106202a6200e6201e620116100a6100861006610046100361003610026100161000610006100000000000000000000000000
 12020000129701f9703c9703a67038670346703467033670316702e6702d6702b6701263013670146701567015670146701367012670106700f6700e6700d6700c6700b6700867004670006700b6700867005670
 12020000129701f9703c970376703867027670396701c670306703067025670326700b6300e670106700867005670056700567008670096700a67008670076700567006670096700b67003670036700267002670
 12020000129701f9703c970386703e670376703567035670376703367031670316701f63022670256702867029670146700b6700c67006670046702067024670256700b670216701d6701d630286302c62005600
@@ -1871,7 +1928,7 @@ __sfx__
 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1507000030513325132c5132c513385030b5000b50000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
 13020000129701f9703c9703a67038670346703467033670316702e6702d6702b6701263013670146701567015670146701367012670106700f6700e6700d6700c6700b6700867004670006700b6700867005670
 01030000025560455606556085560a5560d5561055612556155561955620556255562d556005003757000500005003d570005003e5003f5700050000500005000050000500005000050000500005000050000500
 14040000341162c14629146281362255621556205561f5561d5561c5561b556195561755614556115460b546095360c52607526075263f7003f7003f7003f7003f7003f7003f7003f7003f7003f7003f7003f700
