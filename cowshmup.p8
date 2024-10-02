@@ -4,14 +4,10 @@ __lua__
 
 -- main todo
 -------------------
--- bombs
--- - sound effects
--- - bomb hurting enemies
--- - bomb converting shots
--- - exit bomb earlier
--- - lingering shadow bug
 
-
+-- gameplay pass 
+-- damage values?
+-- offscreen pickups check
 -- lock player to screen
 
 -- letting go of buttons
@@ -296,7 +292,6 @@ function drw_game()
 		  drawobj(p.layer==2 and p)
 		 end
 		 
-		 pal() 
 		 local fframe=anilib[1][t\3%4+1]
 		 for i=-1,2,3 do
 		  mspr(fframe,pspr.x+i,py+8)
@@ -431,13 +426,15 @@ function upd_game()
  dobuls(buls)
  doenemies()
  dopicks()
- 
+ if bombrd>0 then
+  fadebomb()
+ end
  -- collions
  -- shots vs enemies
  local hashit=false
  for e in all(enemies) do
   for s in all(shots) do
-   if e.colshot and not s.delme and col2(e,s) then
+   if e.colshot and not s.delme and e.hp>0 and col2(e,s) then
     
     s.delme=true
     
@@ -451,42 +448,14 @@ function upd_game()
 			 })  
     
     if s.y>deadzone then
-     e.hp-=shotdmg
-     e.flash=2
-    end
-    
-    
-    if e.hp<=0 then
-     spawnpick(e.x,e.y,1,false)
-     score+=0x.0001*500
-     del(enemies,e)
-     explode(e.x,e.y)
-     if e.canc>0 then
-      --bullet cancel
-      for b in all(buls) do
-       if b.en==e then
-        del(buls,b)
-							 add(parts,{
-							  draw=shwave,
-							  x=b.x,
-							  y=b.y,
-							  c=7,
-							  r=0,
-							  sr=0.5,
-							  maxage=7
-							 })
-       end
-      end
-     end
-    else
-     hashit=true
-    end 
+     hashit=hashit or not hitenemy(e,shotdmg)
+    end   
    end
   end
  end
  if hashit then
   sfx(6,3)
- end  
+ end
  -- ship vs enemies
  if invul<=0 then
 	 for e in all(enemies) do
@@ -504,9 +473,7 @@ function upd_game()
   invul-=1
  end
  
- for p in all(parts) do
-  dopart(p)
- end
+ doparts(p)
  
  if scroll>670 then
  	fadeout()
@@ -679,6 +646,28 @@ end
 -->8
 --gameplay
 
+function hitenemy(e,dmg)
+ e.hp-=dmg
+ e.flash=2
+ 
+ if e.hp<=0 then
+  spawnpick(e.x,e.y,1,false)
+  score+=0x.0001*500
+  del(enemies,e)
+  explode(e.x,e.y)
+  if e.canc>0 then
+   --bullet cancel
+   for b in all(buls) do
+    if b.en==e then
+     delbul(b)
+    end
+   end
+  end
+  return true
+ end
+ return false
+end
+
 function dopicks()
  for p in all(picks) do
   p.age+=1
@@ -707,21 +696,22 @@ function dopicks()
   if p.y>135 then
    del(picks,p)
   else
-	  p.dist=dist(p.x,p.y,pspr.x,pspr.y)  
-	  if p.dist<32 then
-	   del(picks,p)
-	   sfx(63)
-	   add(parts,{
-	    draw=shwave,
-	    x=p.x,
-	    y=p.y,
-	    c=7,
-	    r=6,
-	    sr=2.5,
-	    maxage=6
-	   })
-	  elseif p.dist<64 then
-	   p.magnet=true
+   if p.cool>0 then
+    p.cool-=1
+   else
+		  if dist(p.x,p.y,pspr.x,pspr.y)<32 then
+		   del(picks,p)
+		   sfx(63)
+		   add(parts,{
+		    draw=shwave,
+		    x=p.x,
+		    y=p.y,
+		    c=7,
+		    r=6,
+		    sr=2.5,
+		    maxage=6
+		   })
+	   end
 	  end
   end
  end
@@ -740,6 +730,7 @@ function spawnpick(px,py,pnum,pstar)
 	  age=0,
 	  sx=-sin(ang2)*4,
 	  sy=-4-cos(ang2),
+	  cool=5,
 	  ani=anilib[pstar and 17 or 16],
 	  anis=6,
 	  star=pstar
@@ -793,12 +784,7 @@ function die2()
  		_upd=upd_gover
 			_drw=drw_gover   
   end
-  callwhile=function()
-   --★
-   for p in all(parts) do
-    dopart(p)
-   end  
-  end
+  callwhile=doparts
   music(-1,1000)
  end
 end
@@ -1147,6 +1133,19 @@ end
 -->8
 --particles
 
+function delbul(b)
+ del(buls,b)
+ add(parts,{
+  draw=shwave,
+  x=b.x,
+  y=b.y,
+  c=7,
+  r=0,
+  sr=0.5,
+  maxage=7
+ })
+end
+
 function explode(ex,ey)
  sfx(rnd({2,3,4}))
 
@@ -1178,62 +1177,65 @@ end
 
 --1855
 
-function dopart(p)
- -- age and wait
- p.age=p.age or 0
- if p.age==0 then
-  p.ox=p.x
-  p.oy=p.y
-  p.r=p.r or 1
-  p.spd=p.spd or 1
- end
- p.age+=1
- if p.age<=0 then return end
- 
- --particle code
- 
- --movement
- if p.tox then
-  p.x+=(p.tox-p.x)/(4/p.spd)
-  p.y+=(p.toy-p.y)/(4/p.spd)   
- end
- if p.sx then
-  p.x+=p.sx
-  p.y+=p.sy
-  if p.tox then
-   p.tox+=p.sx
-   p.toy+=p.sy
-  end
-  
-  if p.drag then
-   p.sx*=p.drag
-   p.sy*=p.drag
-  end
- end
- 
- --size
- if p.tor then
-  p.r+=(p.tor-p.r)/(5/p.spd)--★ spd
- end
- if p.sr then
-  p.r+=p.sr
- end
- 
- if p.age>=p.maxage or p.r<0.5 then
-  if p.onend=="return" then   
-   p.tox=p.ox
-   p.toy=p.oy
-   p.tor=nil
-   p.sr=-0.3
-  elseif p.onend=="fade" then
-   p.tor=nil
-   p.sr=-0.1-rnd(0.3)
-  else
-   del(parts,p)
-  end
-  p.ctab=nil
-  p.onend=nil
-  p.maxage=32000
+function doparts(p)
+ for p in all(parts) do
+	 -- age and wait
+	 p.age=p.age or 0
+	 if p.age==0 then
+	  p.ox=p.x
+	  p.oy=p.y
+	  p.r=p.r or 1
+	  p.spd=p.spd or 1
+	 end
+	 p.age+=1
+	 if p.age>0 then
+		 
+		 --particle code
+		 
+		 --movement
+		 if p.tox then
+		  p.x+=(p.tox-p.x)/(4/p.spd)
+		  p.y+=(p.toy-p.y)/(4/p.spd)   
+		 end
+		 if p.sx then
+		  p.x+=p.sx
+		  p.y+=p.sy
+		  if p.tox then
+		   p.tox+=p.sx
+		   p.toy+=p.sy
+		  end
+		  
+		  if p.drag then
+		   p.sx*=p.drag
+		   p.sy*=p.drag
+		  end
+		 end
+		 
+		 --size
+		 if p.tor then
+		  p.r+=(p.tor-p.r)/(5/p.spd)--★ spd
+		 end
+		 if p.sr then
+		  p.r+=p.sr
+		 end
+		 
+		 if p.age>=p.maxage or p.r<0.5 then
+		  if p.onend=="return" then   
+		   p.tox=p.ox
+		   p.toy=p.oy
+		   p.tor=nil
+		   p.sr=-0.3
+		  elseif p.onend=="fade" then
+		   p.tor=nil
+		   p.sr=-0.1-rnd(0.3)
+		  else
+		   del(parts,p)
+		  end
+		  p.ctab=nil
+		  p.onend=nil
+		  p.maxage=32000
+	  end
+	 end
  end
 end
 
@@ -1385,11 +1387,15 @@ end
 -->8
 -- bomb
 
-function bomb()
+function bomb(range)
+ sfx(62)
+ 
+ 
+ bombrange=range or 60
  bombx=pspr.x
  bomby=pspr.y
  flashship=true
- 
+ invul=0
  
  bombrs=0
  bombrd=bombrs
@@ -1412,44 +1418,70 @@ function bombwhile()
  -- 3: flash shockwave
  -- 4: shrink
  bombt+=1
- if bombphase==1 then
-  bombrs+=(40-bombrs)/10
-  bombrd=bombrs
-  if bombt>20 then
-   bombphase=2
-  end
- elseif bombphase==2 then
-  bombrs+=(40-bombrs)/10
+ if bombphase<=2 then
+  bombrs+=(bombrange-bombrs)/10
   bombrd=bombrs
   
-	 bombdme+=bombspd
-	 bombspd+=0.02
-	 if bombdme>1 then
-	  bombdme=1
-	  bombphase=3
-	  fadeperc=0.5
-	  bombspd=0.2
-	 end  
- elseif bombphase==3 then
-  bombrd-=bombspd
-  bombrs+=bombspd*8
-  bombspd=bombspd+0.1
-  if bombrd<=0 then
-   freeze=0
+  for b in all(buls) do
+   if dist(bombx,bomby,b.x,b.y)<bombrs then
+    delbul(b)
+    spawnpick(b.x,b.y,1,true)
+   end
   end
- else
- 
+  
+  if bombphase==2 then
+		 bombdme+=bombspd
+		 bombspd+=0.02
+		 if bombdme>1 then
+		  bombdme=1
+		  bombphase=3
+		  fadeperc=0.5
+		  bombspd=0.2
+		  bombt=0
+				for b in all(buls) do
+				 delbul(b)
+				end
+		 end  
+  end
+  
+  if bombphase==1 and bombt>20 then
+   bombphase=2
+  end
+ elseif bombphase==3 then
+  fadebomb()
+  if bombt>=14 then
+   freeze=0
+  end 
  end
- 
+ doparts()
  --bombrs+=1
  --bombrd=bombrs
 end
 
 function bombend()
  flashship=false
+	callwhile=abs
+	
+	for e in all(enemies) do
+		if dist(bombx,bomby,e.x,e.y)<bombrange+8 then
+		 hitenemy(e,100)
+		end
+	end
+	
+	invul=60
+end
 
-	bombrd=0
-	bombrs=0
+function fadebomb()
+ bombrd-=bombspd
+ bombrs+=bombspd*4
+ bombspd=bombspd+0.25
+ --★
+ if bombrd<0 then
+  for p in all(picks) do
+   p.magnet=true
+  end
+  bombrs=0
+ end
 end
 __gfx__
 000000ee0000000000000ee00000000000000e0009009090000700000700070000000700000a0000900000090090000000ccc00000880000ddd0008980070070
@@ -1676,7 +1708,7 @@ __sfx__
 13020000129701f9703c9703a67038670346703467033670316702e6702d6702b6701263013670146701567015670146701367012670106700f6700e6700d6700c6700b6700867004670006700b6700867005670
 1108000018673275531f5531b5532250017553225001754300000175430a5000a5000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
 01010000266002d60033600316002e60021600166000e6000c6000b60019600246001c60009600066000960011600106000a60000600006000060000000000000000000000000000000000000000000000000000
-a501000009900389003590036900329002f9002d90026900229001c90019900179001590012900109000e9000a900069000290002900049000590004900059000590004900029000190000900029000090001900
+570300000a070050700407004070030700207001070000700007000070000700007038570046703f5600f66014660226602f660396603d6603b660376603266029660206601a600146600e6600b6000866008660
 080100001f720237302a740347503f7201c7203870001700007000270000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700
 __music__
 00 0a150857
