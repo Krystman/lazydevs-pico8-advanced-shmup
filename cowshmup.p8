@@ -3,14 +3,10 @@ version 42
 __lua__
 
 -- main todo
-------------------- 
--- hyper
--- - direct bomb
--- letting go of buttons
--- better way to center text
--- highscore
--- update mspr in other editors
--- tweak option muzzle flashes
+-------------------
+-- nice to have
+-- - animate option transition
+-- - better way to center text
 
 function _init()
  t=0
@@ -24,6 +20,13 @@ function _init()
  #include shmup_brains.txt
  #include shmup_pats.txt
  
+ cartdata("cowshmup")
+ highscore=dget(0)
+ menuitem(1,"clear higscore", function()
+  highscore=0
+  dset(0,0)
+ end)
+ 
  butarr=split "1,2,3,1,4,6,7,4,5,9,8,5,1,2,3,1"
  dirx=split "0,-1,1, 0,0, -0.7, 0.7,0.7,-0.7"
  diry=split "0, 0,0,-1,1, -0.7,-0.7,0.7,0.7"
@@ -34,15 +37,21 @@ function _init()
  pal_popup=split2d "13,7|13,6|4,10|2,9|7,14|9,10"
  
  poke(0x5600,unpack(split"6,6,7,0,0,1,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,5,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,112,0,0,0,0,0,7,0,112,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63,63,63,63,63,63,63,0,0,0,63,63,63,0,0,0,0,0,63,51,63,0,0,0,0,0,51,12,51,0,0,0,0,0,51,0,51,0,0,0,0,0,51,51,51,0,0,0,0,48,60,63,60,48,0,0,0,3,15,63,15,3,0,0,62,6,6,6,6,0,0,0,0,0,48,48,48,48,62,0,99,54,28,62,8,62,8,0,0,0,0,15,0,0,0,0,0,0,0,0,3,1,0,0,0,0,0,0,0,0,3,3,0,0,10,10,0,0,0,0,0,4,10,4,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,0,6,6,0,27,27,0,0,0,0,0,0,0,54,127,54,54,127,54,0,8,62,11,62,104,62,8,0,0,27,24,12,12,6,54,0,14,27,27,110,59,59,110,0,6,6,0,0,0,0,0,0,6,7,3,1,3,7,6,0,3,7,6,4,6,7,3,0,0,0,27,14,31,27,0,0,0,0,6,15,6,0,0,0,0,0,0,0,3,1,0,0,0,0,0,15,0,0,0,0,0,0,0,0,6,6,0,0,32,48,24,12,6,3,1,0,28,54,54,54,62,28,0,0,14,12,12,12,30,30,0,0,30,48,24,12,62,62,0,0,30,48,28,48,62,30,0,0,28,26,26,62,62,24,0,0,62,2,30,48,62,30,0,0,28,6,30,54,62,28,0,0,62,48,24,12,6,6,0,0,28,54,28,54,62,28,0,0,28,54,60,48,60,28,0,0,0,0,3,0,3,0,0,0,0,0,3,0,3,1,0,0,48,24,12,6,12,24,48,0,0,0,15,0,15,0,0,0,6,12,24,48,24,12,6,0,7,15,12,6,0,6,6,0,0,30,51,59,59,3,30,0,28,54,54,62,62,54,0,0,30,54,30,54,62,30,0,0,60,6,6,6,62,60,0,0,30,54,54,54,62,30,0,0,62,6,30,6,62,62,0,0,62,6,30,6,6,6,0,0,60,6,54,54,62,60,0,0,54,54,62,62,54,54,0,0,30,12,12,12,30,30,0,0,60,24,24,26,30,12,0,0,54,30,14,30,62,54,0,0,6,6,6,6,62,62,0,0,34,54,62,62,54,54,0,0,50,54,62,62,54,38,0,0,28,54,54,54,62,28,0,0,30,54,62,30,6,6,0,0,28,54,54,54,30,60,0,0,30,54,62,30,54,54,0,0,60,6,28,56,62,30,0,0,30,12,12,12,12,12,0,0,54,54,54,54,62,28,0,0,54,54,54,54,28,8,0,0,34,42,42,42,62,28,0,0,54,54,28,28,54,54,0,0,18,18,30,12,12,12,0,0,62,48,24,12,62,62,0,0,62,6,6,6,6,6,62,0,1,3,6,12,24,48,32,0,62,48,48,48,48,48,62,0,12,30,18,0,0,0,0,0,0,0,0,0,0,0,0,31,24,24,16,0,0,0,0,0,28,54,54,62,62,54,0,0,30,54,30,54,62,30,0,0,60,6,6,6,62,60,0,0,30,54,54,54,62,30,0,0,62,6,30,6,62,62,0,0,62,6,30,6,6,6,0,0,60,6,54,54,62,60,0,0,54,54,62,62,54,54,0,0,30,12,12,12,30,30,0,0,60,24,24,26,30,12,0,0,54,30,14,30,62,54,0,0,6,6,6,6,62,62,0,0,34,54,62,62,54,54,0,0,50,54,62,62,54,38,0,0,28,54,54,54,62,28,0,0,30,54,62,30,6,6,0,0,28,54,54,54,30,60,0,0,30,54,62,30,54,54,0,0,60,6,28,56,62,30,0,0,30,12,12,12,12,12,0,0,54,54,54,54,62,28,0,0,54,54,54,54,28,8,0,0,34,42,42,42,62,28,0,0,54,54,28,28,54,54,0,0,18,18,30,12,12,12,0,0,62,48,24,12,62,62,0,0,28,4,4,2,4,4,28,0,0,0,0,0,0,0,0,0,56,32,32,64,32,32,56,0,0,0,76,50,0,0,0,0,0,0,0,0,0,0,0,0,127,127,127,127,127,127,127,0,85,42,85,42,85,42,85,0,65,99,127,93,93,119,62,0,62,99,99,119,62,65,62,0,17,68,17,68,17,68,17,0,4,12,124,62,31,24,16,0,28,38,95,95,127,62,28,0,34,119,127,127,62,28,8,0,42,28,54,119,54,28,42,0,8,28,20,62,62,28,0,0,8,28,62,127,62,42,58,0,62,103,99,103,62,65,62,0,62,127,93,93,127,99,62,0,24,120,8,8,8,15,7,0,62,99,107,99,62,65,62,0,8,20,42,93,42,20,8,0,0,0,0,85,0,0,0,0,62,115,99,115,62,65,62,0,8,28,127,28,54,34,0,0,127,34,20,8,20,34,127,0,62,119,99,99,62,65,62,0,0,10,4,0,80,32,0,0,17,42,68,0,17,42,68,0,62,107,119,107,62,65,62,0,127,0,127,0,127,0,127,0,85,85,85,85,85,85,85,0")) 
+ poke(0x5f34,0x2)
  
 	fadetable= split2d "0,128,130,133,5,5,5,134,134,134,134,6,6,6,7|1,1,5,5,13,13,13,13,13,6,6,6,6,6,7|2,141,141,134,134,134,134,134,6,6,6,6,6,7,7|3,3,3,3,13,13,13,13,6,6,6,6,6,7,7|4,4,4,134,134,134,143,143,143,15,15,15,15,7,7|5,5,134,134,134,134,134,134,6,6,6,6,6,7,7|6,6,6,6,6,6,6,6,7,7,7,7,7,7,7|7,7,7,7,7,7,7,7,7,7,7,7,7,7,7|8,8,8,142,142,14,14,14,14,14,15,15,15,7,7|9,9,9,10,10,143,143,135,135,15,15,15,15,7,7|10,10,10,135,135,135,135,135,135,15,15,15,7,7,7|11,11,11,11,11,138,138,6,6,6,6,6,6,7,7|12,12,12,12,12,12,6,6,6,6,6,6,7,7,7|13,13,13,13,6,6,6,6,6,6,6,6,7,7,7|14,14,14,14,14,15,15,15,15,15,15,7,7,7,7|15,15,15,15,15,15,15,7,7,7,7,7,7,7,7"
  fadeperc=0
  
  freeze=0
  score=0
-
+ 
+ duck=0
+ released=false
+ 
  pers=0.85
  
+ mnucur=1
+ mainmnu=split2d "start,0|cliff,220|chunkers,420"
  _upd=upd_menu
  _drw=drw_menu
  
@@ -54,12 +63,10 @@ function _init()
  --★
  --coldebug=true
  
- 
 end
 
-function startgame()
+function startgame(sscr)
  px,py=64,64
- spd=1.9
  shotdmg=0.7
  bombdmg=40
  cutoff=90
@@ -102,6 +109,7 @@ function startgame()
  
  bombrs=-1
  bombrd=-1
+ iris=-1
  
  -- gameplay
  score=0
@@ -110,7 +118,7 @@ function startgame()
  -- hyper
  hyper=false
  linger=0
- charge=200
+ charge=0
  chargemax=400
  chargethrs=200
  hypermult=1.5
@@ -121,6 +129,7 @@ function startgame()
  --scoring
  starval=0
  starcount=0
+ hypertally=0
  lastscore=0
  
  callwhile=abs
@@ -131,9 +140,8 @@ function startgame()
  
  
  --★
- 
  --scroll=220
- scroll=0
+ scroll=sscr
  --scroll=0
  for i=1,#sched do
   if sched[i][1]<scroll then
@@ -221,8 +229,7 @@ function drw_game()
  
  --shots
  if hyper then
-  pal(10,7)
-  pal(9,7)  
+  pal(pal_wflash)  
  end
  for s in all(shots) do
   drawobj(s)  
@@ -297,6 +304,7 @@ function drw_game()
  end
  
  --ship
+ local dangerflash=false
  if inviz<=0 then
 	 if invul<=0 or (time()*9)%1<0.5 then
 	 	pal(14,12)
@@ -309,13 +317,12 @@ function drw_game()
 	    circ(pspr.x,pspr.y+2,11+sin(time()*3)*2,7)
 	    fillp()
 	    if charge<40 then
-	     if t%4<2 then
-	      pal(pal_wflash)
-	     end
+	     dangerflash=t%4<2
 	    elseif charge<80 then
-	     if t%8<4 then
-	      pal(pal_wflash)
-	     end
+	     dangerflash=t%8<4
+	    end
+	    if dangerflash then
+	     pal(pal_wflash)
 	    end
 	   elseif hasbomb and t%8<4 then
 	    pal(14,rnd({6,7}))
@@ -347,10 +354,18 @@ function drw_game()
  end
  
  -- hyper circles
- if hycirc then
-  for h in all(hycirc) do
-   oval2(pspr.x,pspr.y,h,h*pers,7)
-  end
+ for h in all(hycirc) do
+  oval2(pspr.x,pspr.y,h,h*pers,7)
+ end
+ 
+ -- iris
+ if iris>=0 then
+  iris+=5
+  oval2(bombx,bomby,iris,iris*pers,7|0x1800,ovalfill)
+  if iris>100 then
+   iris=-1
+	  suckin()
+	 end
  end
  
  camera()
@@ -358,23 +373,42 @@ function drw_game()
  --gui
  
  --charge bar
+ 
  local flashcol=7
  if hasbomb and not hyper then
   flashcol=rnd({7,6})
-  print("ready!",2,8,flashcol)
+  rectfill(3,9,26,15,7)
+  rectfill(2,10,27,14,7)
+  print("ready!",4,10,t%16<8 and 13 or 6)
+ end 
+ rect(3,2,44,6,7)
+ line(3,7,44,7,13)
+ for i in all({2,45,23}) do
+  mspr(77,i,3)
  end
- rect(2,2,43,6,7)
- line(4,4,4+charge/chargemax*37,4,flashcol)
- pset(22,3,7)
- pset(22,5,7)
+ clip(4,3,charge/chargemax*40,3)
+ local sp=hasbomb and 2 or 8
+ if hyper then
+  sp=-1
+  if dangerflash then
+   pal(6,8)
+   pal(7,14)
+  end
+ end
+ local j=t/sp%6
+ for i=-1,6 do
+  mspr(76,3+i*6+j,3)
+ end
+ pal()
+ clip()
  
  poke(0x5f58,0x81)
  --score
  local myscr=addspace(tostr(score,0x2)) 
- shprint(myscr,126-scrlen(myscr),2,7) 
+ otprint(myscr,126-scrlen(myscr),2,7,13,6) 
  
  --lives
- shprint("웃"..lives,2,119,7)
+ otprint("웃"..lives,2,119,7,13,6)
  
  -- star value 
  if linger>0 then
@@ -382,7 +416,7 @@ function drw_game()
   if hyper or t%4<3 then
 	  mspr(61,120,21)
 	  myscr=addspace(tostr(starval,0x2))
-	  shprint(myscr,114-scrlen(myscr),19,10)
+	  otprint(myscr,114-scrlen(myscr),19,10,4,9)
   end
  end
  
@@ -391,28 +425,51 @@ function drw_game()
  -- score history
  if lastscore>0 then
   local txt="+"..tostr(lastscore,0x2)
-  print(txt,127-#txt*4,10,7)
+  otprint(txt,127-#txt*4,10,7,13)
  end
  
  -- star count 
- if linger>0 and starcount>0 then
+ if linger>0 and not hyper then
+  line(100,28,126,28,7)
   local txt="★"..starcount
-  print(txt,123-#txt*4,28,7) 
+  otprint(txt,123-#txt*4,31,7,13)
+  txt="+"..tostr(hypertally,0x2)
+  otprint(txt,127-#txt*4,39,7,13)
  end
 end
 
 function drw_menu()
  map(19,8)
+
+ otprint("highscore",48,58,7,13)
+ 
+ poke(0x5f58,0x81)
+ otprint("not cowshmup",33,30,7,13,6)
+ local myscr=addspace(tostr(highscore,0x2)) 
+ otprint(myscr,64-scrlen(myscr)/2,66,7,13,6)
+ poke(0x5f58,0)
+ 
+ rectfill(38,87,96,88+#mainmnu*7,0)
+ for i=1,#mainmnu do
+  local iy=i*7+82
+  if i==mnucur then
+   rectfill(39,iy-1,95,iy+5,7)
+  end
+  print(mainmnu[i][1],40,iy,i==mnucur and 0 or 7)
+ end
 end
 
 function drw_gover()
  cls(0)
- shprint("score",55,58,7)
- 
+ if score==highscore then
+  otprint("highscore!",45,58,t%10<5 and 7 or 6,13)
+ else
+  otprint("score",55,58,7,13)
+ end
  poke(0x5f58,0x81)
- shprint(govert,64-#govert*3,30,7)
+ otprint(govert,64-#govert*3,30,7,13,6)
  local myscr=addspace(tostr(score,0x2)) 
- shprint(myscr,64-scrlen(myscr)/2,65,7)
+ otprint(myscr,64-scrlen(myscr)/2,66,7,13,6)
  poke(0x5f58,0)
  
 end
@@ -464,6 +521,8 @@ function upd_game()
   py=flr(py)+0.5
  end
    
+ spd=hyper and 2 or 1.8
+ 
  px=mid(3, px+dirx[dir]*spd,123)
  py=mid(12,py+diry[dir]*spd,120)
  
@@ -484,7 +543,17 @@ function upd_game()
  
  --options
  local opta=(pspr.ani[1]-3)*0.04
- popt=makeopt(pspr,2,14,-11,-11/5,0.25+opta,-2)
+ local opty,optr=-2,-11
+ if hyper then
+  opty,optr=-8,-9
+  opta=time()
+ end
+ popt=makeopt(pspr,2,14,
+      optr,optr/5,
+      0.25+opta,
+      opty)
+ 
+ --makeopt(_org,_num,_ani,_radx,_rady,_ang,_yoff)
  
  hasbomb=charge>=chargethrs
  shotframe=false
@@ -532,9 +601,9 @@ function upd_game()
  	if shotframe then
 	 	pspr.col=myspr[63]
 			if col2(pspr,e) then
+			 e.flash=2
 	  	if e.y>deadzone then
 	  	 hashit=not hitenemy(e,shotdmg*dmgmult) or hashit
-	  	 
 	 	 end   	
 	 	end
 	 	pspr.col=myspr[28]
@@ -553,14 +622,14 @@ function upd_game()
 			  age=-1,
 			  ani=anilib[4]
 			 })  
-    
+    e.flash=2
     if s.y>deadzone then
      hashit=not hitenemy(e,shotdmg*dmgmult) or hashit
     end   
    end
   end
  end
- if hashit then
+ if hashit and t>duck then
   sfx(6,3)
  end
  -- ship vs enemies
@@ -580,30 +649,42 @@ function upd_game()
   invul-=1
  end
  
- doparts(p)
+ doparts()
  
  if scroll>670 then
- 	fadeout()
  	music(-1,1000)
- 	govert="finished"
- 	_upd=upd_gover
-		_drw=drw_gover
+ 	gogover "finished"
  end
 
 end
 
 function upd_menu()
- if btnp(❎) or btnp(🅾️) then
-  fadeout()
-  startgame()
+ if released then
+	 if btnp(❎) or btnp(🅾️) then
+	  fadeout()
+	  startgame(mainmnu[mnucur][2])
+	 end
+	 if btnp(⬆️) then
+	  mnucur-=1
+	 elseif btnp(⬇️) then
+	  mnucur+=1
+	 end
+	 mnucur=mid(1,mnucur,#mainmnu)
+ else
+  released=not btn(❎) and not btn(🅾️)
  end
 end
 
 function upd_gover()
- if btnp(❎) or btnp(🅾️) then
-  fadeout()
-  _upd=upd_menu
-  _drw=drw_menu
+ if released then
+	 if btnp(❎) or btnp(🅾️) then
+	  fadeout()
+	  released=false
+	  _upd=upd_menu
+	  _drw=drw_menu
+	 end
+ else
+  released=not btn(❎) and not btn(🅾️)
  end
 end
 -->8
@@ -701,9 +782,16 @@ function drawshad(obj)
  ovalfill(ox-(ow-1),oy-(oh-1),ox+ow,oy+oh,1)
 end
 
-function shprint(txt,x,y,c)
- print(txt,x,y+1,1)
+function otprint(txt,x,y,c,c2,c3)
+ for i=2,5 do
+  print(txt,x+dirx[i],y+diry[i],c2)
+ end 
  print(txt,x,y,c)
+ if c3 then
+  clip(0,y+5,128,1)
+  print(txt,x,y,c3)
+  clip()
+ end
 end
 
 function addspace(txt)
@@ -749,7 +837,23 @@ function oval2(ox,oy,ow,oh,oc,func)
  func(ox-ow,oy-oh,ox+ow,oy+oh,oc)
 end
 
+function suckin()
+ for p in all(picks) do
+  p.magnet=true
+ end
+end
 
+function gogover(txt)
+	govert=txt
+	released=false
+	fadeout()
+	_upd=upd_gover
+	_drw=drw_gover
+	if score>highscore then
+	 highscore=score
+	 dset(0,score)
+	end
+end
 -->8
 --gameplay
 
@@ -771,6 +875,11 @@ function hitenemy(e,dmg,bomb)
 	  elseif d<58 then
 	   mult=2
 	  end
+		else
+		 if not hyper then
+		  mult=4
+		  cows=1
+		 end
 		end
 		
   cows=max(cows,e.cows)
@@ -785,12 +894,9 @@ function hitenemy(e,dmg,bomb)
   if hyper then
    starval+=scr
   end
-  del(enemies,e)
-  explode(e.x,e.y)
   
-  for p in all(e.burn) do
- 		del(parts,p)
-  end
+  explode(e.x,e.y)
+  delen(e)
   
   if mult>1 then
    add(parts,{
@@ -837,6 +943,13 @@ function hitenemy(e,dmg,bomb)
  return false
 end
 
+function delen(e)
+ del(enemies,e)
+ for p in all(e.burn) do
+		del(parts,p)
+ end
+end
+
 function dopicks()
  for p in all(picks) do
   p.age+=1
@@ -871,27 +984,27 @@ function dopicks()
   else
    if p.cool>0 then
     p.cool-=1
-   else
-		  if dist(p.x,p.y,pspr.x,pspr.y)<32 then
-		   del(picks,p)
-		   sfx(63)
-		   add(parts,{
-		    draw=shwave,
-		    x=p.x,
-		    y=p.y,
-		    c=7,
-		    r=6,
-		    sr=2.5,
-		    maxage=6
-		   })
-		   
-		   charge=min(chargemax,charge+ch_pick)
-					if p.star then
-						score+=starval
-						starcount+=1
-					end
-	   end
-	  end
+   elseif dist(p.x,p.y,pspr.x,pspr.y)<32 then
+	   del(picks,p)
+	   sfx(63)
+	   add(parts,{
+	    draw=shwave,
+	    x=p.x,
+	    y=p.y,
+	    c=7,
+	    r=6,
+	    sr=2.5,
+	    maxage=6
+	   })
+	   local getch=ch_pick
+				if p.star then
+					score+=starval
+					hypertally+=starval
+					starcount+=1
+					getch/=2
+				end
+	   charge=min(chargemax,charge+getch)
+   end
   end
  end
 end
@@ -961,10 +1074,7 @@ function die2()
   freeze=60
   callback=function()
  		callwhile=abs
- 		fadeout()
- 		govert="game over"
- 		_upd=upd_gover
-			_drw=drw_gover   
+ 		gogover "game over"
   end
   callwhile=doparts
   music(-1,1000)
@@ -1061,7 +1171,7 @@ function doenemies()
   local oscr=col2(e,screen)
   
   if e.staged and not oscr then
-   del(enemies,e)
+   delen(e)
   else
    e.staged=oscr
   end
@@ -1166,7 +1276,7 @@ function shoot()
   add(shots,{
    x=pspr.x+i,
    y=py-14,
-   sx=sgn(i)*0.2,
+   sx=hyper and 0 or sgn(i)*0.2,
    sy=shotspd,
    ani=anilib[3],
    anis=2,
@@ -1183,10 +1293,11 @@ function shoot()
 	 })
  end
  for p in all(popt) do
+  local osprd=hyper and 0.8 or 1.1
   add(shots,{
    x=p.x,
    y=p.y-14,
-   sx=1.1*sgn(p.x-pspr.x),
+   sx=osprd*sgn(p.x-pspr.x),
    sy=shotspd,
    ani=anilib[15],
    anis=2,
@@ -1198,12 +1309,13 @@ function shoot()
 	  maxage=5,
 	  x=0,
 	  y=-4,
-	  ani=anilib[2],
+	  ani=anilib[19],
 	  plock=p
 	 }) 
  end
- 
- sfx(hyper and 58 or 0,3)
+ if t>duck then
+  sfx(hyper and 58 or 0,3)
+ end
 end
 
 function makepat(pat,pang)
@@ -1332,7 +1444,8 @@ end
 
 function explode(ex,ey)
  sfx(rnd({2,3,4}))
-
+ duck=t+30
+ 
  add(parts,{
   draw=blob,
   x=ex,
@@ -1361,7 +1474,7 @@ end
 
 --1855
 
-function doparts(p)
+function doparts()
  for p in all(parts) do
 	 -- age and wait
 	 p.age=p.age or 0
@@ -1582,18 +1695,25 @@ function hyperon()
  flashship=true
  starval=0
  starcount=0
+ hypertally=0
  
- sfx(60)
  hycirc={}
  for i=0,5 do
   add(hycirc,100+i*60)
  end
-
  
  callwhile=function()
+  if freeze==20 then
+   sfx(60)
+  end
 	 for i=1,6 do
 	  hycirc[i]+=(2-hycirc[i])/8
-	 end 
+	 end
+	 if btnp(🅾️) then
+	  flashship=false
+	 	bomb(70)
+	 	hycirc=nil
+	 end
  end
  callback=function()
   callwhile=abs
@@ -1612,9 +1732,8 @@ end
 
 function bomb(range)
  sfx(62)
- 
- 
- bombrange=range or 60
+ duck=t+1
+ bombrange=range or 55
  bombx=pspr.x
  bomby=pspr.y
  flashship=true
@@ -1645,29 +1764,37 @@ function bombwhile()
   bombrs+=(bombrange-bombrs)/10
   bombrd=bombrs
   
-  for b in all(buls) do
-   if dist(bombx,bomby,b.x,b.y)<bombrs then
-    delbul(b)
-    spawnpick(b.x,b.y,1,true)
-   end
+  if hyper then
+	  for b in all(buls) do
+	   if dist(bombx,bomby,b.x,b.y)<bombrs then
+	    delbul(b)
+	    spawnpick(b.x,b.y,1,true)
+	   end
+	  end
   end
   
   if bombphase==2 then
 		 bombdme+=bombspd
 		 bombspd+=0.02
 		 if bombdme>1 then
-		  bombdme=1
-		  bombphase=3
-		  fadeperc=0.5
-		  bombspd=0.2
-		  bombt=0
+		  if hyper then
+			  bombdme=1
+			  bombphase=3
+			  fadeperc=0.5
+			  bombspd=0.2
+			  bombt=0
+		  else
+		   fadeperc=1
+		   freeze=0
+     bombrd=-1
+     bombrs=-1
+     iris=0
+		  end
 				for b in all(buls) do
 				 delbul(b)
 				end
 		 end  
-  end
-  
-  if bombphase==1 and bombt>20 then
+  elseif bombt>20 then
    bombphase=2
   end
  elseif bombphase==3 then
@@ -1686,7 +1813,7 @@ function bombend()
 	callwhile=abs
 	
 	for e in all(enemies) do
-		if dist(bombx,bomby,e.x,e.y)<bombrange+8 then
+		if not hyper or dist(bombx,bomby,e.x,e.y)<bombrange+8 then
 		 hitenemy(e,bombdmg,true)
 		end
 	end
@@ -1701,9 +1828,7 @@ function fadebomb()
  bombspd=bombspd+0.25
  --★
  if bombrd<0 then
-  for p in all(picks) do
-   p.magnet=true
-  end
+  suckin()
   bombrs=0
  end
 end
@@ -1720,10 +1845,10 @@ __gfx__
 0e11cc171161e00e161cc117161e000e1611719aa799a9a00077077777070077707000007110110ff00000000900000000c66777c0e66666e00e77666677e7c7
 0e1d1c711d6d1e0e16d1c77116d1e0e1d6d1179a9a99a9a000ee007777000077700000007221221ff0900000000000000c776667c0e776677e0e77677767e070
 e1ddd111d6d7d1e1dddd1111dd671e176d6d11999a9999900e11007777000007700000077122210ff009000000000000c7767776ce77776777ee76777776e000
-e1dd6ddd6d66d1e1dd66dddd6d661e1666d6dd999a999990e151000777000000700000077221221fffffff00dd00cc00c7677777ce77776777e0e677777e0070
-e1d676676d6dd1e1d6676676d6dd1e1dd6d6769099999990e151000077fffffff00000007111111fffffff0d76dcb7c0c7677777ce77776777e00e77777e0fff
-0e176d167d111e0e117dd1171111e0e11117169009909090e111011111001111100110110110110fffffffd777dc777c0c677777c0e776677e0000e777e00fff
-00e151155d11e000e1655155d11e000ee16151000900909e1d67122222112222211221221000900009090fd67d00c7bc00cc777c000eeeeee000000eee000fff
+e1dd6ddd6d66d1e1dd66dddd6d661e1666d6dd999a999990e151000777000000700000077221221776667700dd00cc00c7677777ce77776777e0e677777e0070
+e1d676676d6dd1e1d6676676d6dd1e1dd6d6769099999990e151000077fffffff0000000711111176667770d76dcb7c0c7677777ce77776777e00e77777e0fff
+0e176d167d111e0e117dd1171111e0e11117169009909090e1110111110011111001101101101106667777d777dc777c0c677777c0e776677e0000e777e00fff
+00e151155d11e000e1655155d11e000ee16151000900909e1d67122222112222211221221000900009090dd67d00c7bc00cc777c000eeeeee000000eee000fff
 000e1111111e00000e11111111e000000e1111000007fffe1667111122111112211221221909a90099900f0dd0000cc00000ccc00fffffffffffffffffffffff
 0000eeeeeee0000000eeeeeeee00000000eeee000074fffe16dd12222211222221122222109aaa999a990fffffffffffffffffffffffffffffffffffffffffff
 0990007777700007770000000770000777700077774afffe1d1112211111111221111122109aa999a7a90fffffffffffffffffffffffffffffffffffffffffff

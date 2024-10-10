@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 41
+version 42
 __lua__
 -- todo
 ------------------
@@ -456,8 +456,8 @@ end
 function mspr(si,sx,sy)
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
  sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
- if _fx==2 then
-  sspr(_x,_y,_w,_h,sx-_ox+_w,sy-_oy,_w,_h,true)
+ if _fx and _fx>=2 then
+  sspr(_x,_y,_w,_h,sx-_ox+_w-(_fx-2),sy-_oy,_w,_h,true)
  end
  
  if _nx then

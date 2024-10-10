@@ -222,20 +222,36 @@ X Design Questions (HARD)
   X Scoring?
   X freeze / die / inviz overhaul
 
-- Prototype Debriefing
-  - GUI (Custom Fonts)
-  - State Machine
-  - Better Shots + Options System
-  - Pickups
-  - Popups
-  - Bombs
+X Prototype Debriefing
+  X GUI (Custom Fonts)
+  X State Machine
+  X Better Shots + Options System
+  X Pickups
+  X Popups
+  X Bombs
 
 - Leftover
-  (X) UI for Scoring?
-  - Do we need boss phases?
-  - Bosss Spawning minions?
-  - Hover effect
+  X UI for Scoring?
+
 
 ---------------------------------------------
 SIXTH GOAL: Make the Game
 ---------------------------------------------
+
+- Make a playable level until the first boss fight
+
+- Make the boss fight
+
+- Boss Questions
+  - Do we need boss phases?
+  - Bosss Spawning minions?
+  - Hover effect
+
+- Playtest
+
+
+
+
+
+
+
