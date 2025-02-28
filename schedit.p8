@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
+-- todo
+-- debug brain previes
 
 function _init()
  autosave=true
@@ -17,6 +19,11 @@ function _init()
  #include shmup_myspr.txt
  #include shmup_brains_trails.txt
  ----------------------
+ 
+ --for i=1,#data do
+ -- data[i][3]=flr(data[i][3])
+ -- data[i][4]=flr(data[i][4])  
+ --end
  
  -- process trails --
  for i=1,#trails do
@@ -330,9 +337,15 @@ function drawtrail(en)
  local mysched=en.sched
  
  local curtrails=trails[en.brain]
- for t in all(curtrails) do
+ 
+ for i=1,#curtrails do
+  local t=curtrails[i]
   local enx=t[1]*en.mirr+mysched[3]
   local eny=t[2]+mysched[4]
+  
+  if en.ground then
+   --eny=eny+(i-1)
+  end
   
   --mspr(en.s,enx,eny)
   pset(enx,eny,7)
@@ -375,8 +388,8 @@ function update_move()
  if clkl then
   local offx,offy=calcoffset(selsched)
   
-  selsched[3]=mousex-xscroll-offx
-  selsched[4]=mousey-offy
+  selsched[3]=flr(mousex-xscroll-offx)
+  selsched[4]=flr(mousey-offy)
  end
  
  if btnp(❎)  then
@@ -700,15 +713,28 @@ function split2d(s)
  return arr
 end
 
-function mspr(si,sx,sy)
- local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
- sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
- if _fx and _fx>=2 then
-  sspr(_x,_y,_w,_h,sx-_ox+_w-(_fx-2),sy-_oy,_w,_h,true)
+function mspr(si,sx,sy,sudofx)
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=fx>=2 and fx or 1-fx
+  ox=-ox+ssw-1
  end
- 
- if _nx then
-  mspr(_nx,sx,sy)
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
+ end
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox,sy+noy,nfx)
+  i+=4
  end
 end
 
@@ -967,6 +993,7 @@ function genens()
    local mirr=sgn(sch[2])
 	  local en=enlib[abs(sch[2])]
 	  local brn=sch[5] or en[3]
+	  local ground=en[6]==1
    local curtrails=trails[brn]
    local enage=(scroll-sch[1])
    local trailage=enage+1
@@ -976,7 +1003,9 @@ function genens()
 		  local ani=anilib[en[1] ]   
 		  local schx=sch[3]+(curtrails[trailage][1]*mirr)
 		  local schy=sch[4]+curtrails[trailage][2]
-	
+				if ground then
+				 --schy+=enage
+				end
 		  --local schx=sch[3]
 		  --local schy=sch[4]+scroll-sch[1]
 	 
@@ -986,11 +1015,12 @@ function genens()
 		   s=cyc(t,ani,en[2]),
 		   sched=sch,
 		   col=en[5],
-		   brain=en[3],
+		   brain=brn,
 		   age=enage,
 		   mirr=mirr,
 		   shads=en[9],
-		   shadh=en[10]
+		   shadh=en[10],
+		   ground=ground
 		  })
 	  end
   end
@@ -1002,12 +1032,16 @@ function calcoffset(sch)
  local mirr=sgn(sch[2])
 	local en=enlib[abs(sch[2])]
 	local brn=sch[5] or en[3]
+	local ground=en[6]==1
  local curtrails=trails[brn]
  local enage=(scroll-sch[1])
  local trailage=enage+1
  if trailage<=#curtrails then
 		offx=curtrails[trailage][1]*mirr
-		offy=curtrails[trailage][2] 
+		offy=curtrails[trailage][2]
+		if ground then
+			--offy+=enage
+		end 
  end
  return offx,offy
 end

@@ -416,20 +416,28 @@ function cyc(age,arr,anis)
  return arr[(age\anis-1)%#arr+1]
 end
 
-function mspr(si,sx,sy)
- -- robustness
- if si<1 or si>#myspr then
-  return
+function mspr(si,sx,sy,sudofx)
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=fx>=2 and fx or 1-fx
+  ox=-ox+ssw-1
  end
- -----
- local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
- sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
- if _fx and _fx>=2 then
-  sspr(_x,_y,_w,_h,sx-_ox+_w-(_fx-2),sy-_oy,_w,_h,true)
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
  end
- 
- if _nx then
-  mspr(_nx,sx,sy)
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox,sy+noy,nfx)
+  i+=4
  end
 end
 

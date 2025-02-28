@@ -9,21 +9,23 @@ Animations
 07 big enemy
 
 Enemy Data
-1 Ani
-2 Ani Speed
-3 Brain
-4 HP
-5 Col
-6 Ground (1 Ground, 2 Air)
-7 Collision (0 - no bullets, 1 - no ship, 2 - normal)
-8 Bullet Cancelling (0 No, 1 Yes)
-9 Shadow Size
-10 Shadow Height
-11 FX
-12 B1X
-13 B1Y
-14 B2X
-15 B2X
+01 ANI - Animation
+02 ASP - Animation Speed
+03 BRN - Brain
+04 HP  - Hit Points
+05 COL - Collision box
+06 GND - Ground (1 Ground, 2 Air)
+07 CFL - Collision (0 - no bullets, 1 - no ship, 2 - normal)
+08 CNC - Bullet Cancelling (0 No, 1 Yes)
+09 SHS - Shadow Size
+10 SHH - Shadow Height
+11 FX  - Special Effect Flag
+12 SCR - Score
+13 COW - Number of cows dropped on kill
+14 B1X - Bullet Exit Postion 1
+15 B1Y
+16 B2X - Bullet Exit Postion 2
+17 B2X
 
 Spawn/Sched Data
 1 Time

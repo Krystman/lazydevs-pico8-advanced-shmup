@@ -379,7 +379,7 @@ function cyc(age,arr,anis)
  return arr[(age\anis-1)%#arr+1]
 end
 
-function mspr(si,sx,sy)
+function msprold(si,sx,sy)
  -- robustness
  if si<1 or si>#myspr then
   return
@@ -396,6 +396,36 @@ function mspr(si,sx,sy)
  end
 end
 
+function mspr(si,sx,sy,sudofx)
+ -- robustness
+ if si<1 or si>#myspr then
+  return
+ end
+ -----
+ 
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=fx>=2 and fx or 1-fx
+  ox=-ox+ssw-1
+ end
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
+ end
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox,sy+noy,nfx)
+  i+=4
+ end
+end
 -->8
 --i/o
 function export(auto)

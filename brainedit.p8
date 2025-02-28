@@ -54,18 +54,24 @@ function _init()
  selbrain=1
  
  cmdlist={
-  "hed",
-  "wai",
-  "asp",
-  "got",
-  "fir",
-  "fr2",
-  "adr",
-  "clo",
-  "flw",
-  "lop",
-  "mov",
-  "snd"
+  "hed",--heading
+  "wai",--wait
+  "asp",--animate speed
+  "got",--goto
+  "fnc",--function  
+  "fir",--fire 1
+  "fr2",--fire 2
+  "adr",--animate direction
+  "clo",--clone
+  "flw",--follow
+  "lop",--loop
+  "mov",--move
+  "snd",--sound
+  "shd", --shadow y lock
+  "mus", --music
+  "trg", --trigger
+  "ani", --set enemy ani
+  "anh"  --set enemy ani and hold
  }
  
  execy=0
@@ -179,22 +185,32 @@ function draw_brain()
  end
  
  for e in all(enemies) do
-  drawobj(e)
-  if overlay and e==protag then
-   local myang=e.ang
-   if e.spd<0 then
-    myang-=-0.5
-   end
-   local ox=sin(myang)
-   local oy=cos(myang)
+  if e.shads>0 then
+   drawshad(e)
+  end
+ end
+ 
+ for l=1,2 do
+	 for e in all(enemies) do
+	  if e.layer==l then
+    drawobj(e)
+    if overlay and e==protag then
+     local myang=e.ang
+     if e.spd<0 then
+      myang-=-0.5
+     end
+     local ox=sin(myang)
+     local oy=cos(myang)
    
-   local ox1=e.x+ox*12
-   local oy1=e.y+oy*12
+     local ox1=e.x+ox*12
+     local oy1=e.y+oy*12
    
-   pset(e.x,e.y,11)
-   line(ox1,oy1,
+     pset(e.x,e.y,11)
+     line(ox1,oy1,
         ox1+ox*8*abs(e.spd),
         oy1+oy*8*abs(e.spd),11)
+    end
+   end
   end
  end
  
@@ -312,7 +328,7 @@ function update_setup()
    callback=enter_meta
   end
  end
- 
+
  if btnp(🅾️) then
   curx=1
   cury=1
@@ -406,7 +422,9 @@ function update_brain()
  if key=="3" then
   showui= not showui
  end
- 
+ if key=="0" then
+  reseten()
+ end
  if btnp(⬆️) then
   cury-=1
  end
@@ -418,6 +436,9 @@ function update_brain()
  if cury==1 then
 	 if btnp(⬅️) then
 	  selbrain-=1
+	  if selbrain<1 then
+	   selbrain=#data
+	  end
 	  enemies={}
 	  buls={}
 	  curtrails=trails[selbrain] or {}
@@ -429,6 +450,7 @@ function update_brain()
 	  buls={}
 	  curtrails=trails[selbrain] or {}
 	  newtrails=curtrails
+
 	 end
 	 selbrain=mid(1,selbrain,#data+1)
 	 curx=1
@@ -451,7 +473,7 @@ function update_brain()
   scrolly+=4
  end
  scrolly=min(0,scrolly)
-
+ 
  --interaction
  if btnp(❎) then
   local mymnu=menu[cury][curx]
@@ -476,18 +498,23 @@ function update_brain()
     "wai",0,0
    })
    add(meta,{
-    1,64,10
+    1,64,10,0
    })
    dirty=true
   end
   return 
  end
+ 
  if data[selbrain] then
   if #enemies==0 then
    local selmeta=meta[selbrain]
    if enlib[selmeta[1]]!=nil then
-    trails[selbrain]=newtrails
-    curtrails=trails[selbrain]
+    if meta[selbrain][4]==1 then
+     trails[selbrain]=newtrails
+    else
+     trails[selbrain]={}
+    end
+				curtrails=trails[selbrain]    
     reseten()
    end
   end
@@ -496,10 +523,14 @@ function update_brain()
   
   if protag and t%5==0 then
    local selmeta=meta[selbrain]
-   if t<450 then
-    add(newtrails,{protag.x-selmeta[2],protag.y-selmeta[3]})
+   if t<900 then
+    add(newtrails,{flr(protag.x-selmeta[2]),flr(protag.y-selmeta[3])})
    else
-    trails[selbrain]=newtrails
+    if meta[selbrain][4]==1 then
+     trails[selbrain]=newtrails
+    else
+     trails[selbrain]={}
+    end
     curtrails=newtrails
    end
   end
@@ -627,25 +658,38 @@ function spacejam(n)
  return ret
 end
 
-function mspr(si,sx,sy)
- local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
- sspr(_x,_y,_w,_h,sx-_ox,sy-_oy,_w,_h,_fx==1)
- if _fx and _fx>=2 then
-  sspr(_x,_y,_w,_h,sx-_ox+_w-(_fx-2),sy-_oy,_w,_h,true)
+function mspr(si,sx,sy,sudofx)
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=fx>=2 and fx or 1-fx
+  ox=-ox+ssw-1
  end
- 
- if _nx then
-  mspr(_nx,sx,sy)
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
+ end
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox,sy+noy,nfx)
+  i+=4
  end
 end
 
-function cyc(age,arr,anis)
- local anis=anis or 1
- return arr[(age\anis-1)%#arr+1]
+function cyc(age,arr,anis,ahold)
+ local frm=age\(anis or 1)
+ return arr[ahold and (mid(1,frm,#arr)) or ((frm-1)%#arr+1)]
 end
 
 function drawobj(obj)
- mspr(cyc(obj.age,obj.ani,obj.anis),obj.x,obj.y)
+ mspr(cyc(obj.age,obj.ani,obj.anis,obj.ahold),obj.x,obj.y)
  
  --★
  if coldebug and obj.col then
@@ -763,9 +807,9 @@ function refresh_setup()
 	 c=13  
  }})
  
- local cap={"en:"," x:"," y:"}
+ local cap={"    en:","     x:","     y:","trails:"}
  local selmeta=meta[selbrain]
- for i=1,3 do
+ for i=1,4 do
   local lne={}
   add(lne,{
 	  txt=cap[i],
@@ -775,12 +819,21 @@ function refresh_setup()
 	  y=3+i*6+2,
 	  c=13  
   })
+  local txtl=selmeta[i]
+  
+  if i==4 then
+   if selmeta[i]==0 then
+    txtl="no"
+   else
+    txtl="yes"
+   end
+  end
   add(lne,{
-	  txt=selmeta[i],
+	  txt=txtl,
 	  w="   ",
 	  cmd="meta",
 	  cmdy=i,
-	  x=3+12,
+	  x=3+4*7,
 	  y=3+i*6+2,
 	  c=13  
   })
@@ -1062,8 +1115,16 @@ function enter_meta()
  local typeval=tonum(typetxt)
  enemies={}
  
- if typeval==nil then
-  typeval=0
+ if mymnu.cmdy==4 then
+  if typetxt=="yes" or tonum(typetxt)==1 then
+   typeval=1
+  else
+   typeval=0
+  end
+ else 
+	 if typeval==nil then
+	  typeval=0
+	 end
  end
  meta[selbrain][mymnu.cmdy]=typeval
  dirty=true
@@ -1113,7 +1174,12 @@ function dobrain(e,depth)
    e.flw=false
   elseif cmd=="got" then
    --goto
-   e.brain=par1
+   e.brain=par1>0 and par1 or e.brain
+   e.bri=par2-3
+  elseif cmd=="fnc" then
+   --function
+   e.fncb,e.fnci=e.brain,e.bri
+   e.brain=par1>0 and par1 or e.brain
    e.bri=par2-3
   elseif cmd=="lop" then
    --loop
@@ -1139,14 +1205,18 @@ function dobrain(e,depth)
    end
    ------------------
    patshoot(e,par1,par2,e.bul2x,e.bul2y)
+   if e.fir2mir then
+    patshoot(e,par1,par2*e.mirr*-1,e.bul2x*e.mirr*-1,e.bul2y)
+   end
   elseif cmd=="snd" then
    sfx(par1,3)
   elseif cmd=="clo" then
    --clone
    for i=1,par1 do
     local myclo=copylist(e)
+    myclo.bulq=copylist(e.bulq)
     myclo.wait+=i*par2
-    myclo.bri+=3
+    myclo.bri+=6
     add(enemies,myclo,1)
    end
   elseif cmd=="flw" then
@@ -1158,11 +1228,64 @@ function dobrain(e,depth)
    e.movx=par1
    e.movy=par2
    quit=true
+  elseif cmd=="shd" then
+   e.shadylock=par1==1
+   e.shadspd=par2
+  elseif cmd=="mus" then
+   --music(par1,par2)
+  elseif cmd=="trg" then
+   --effect trigger
+   if par1==1 then
+    e.boss=true
+				boss=e
+   elseif par1==2 then
+    e.optst=0.01
+   elseif par1==3 then
+    e.layer=2  
+    e.colship=true
+   elseif par1==4 then
+    e.colshot=true
+   elseif par1==5 then    
+    e.beam=par2==1
+   elseif par1==6 then
+    e.hovmax=e.hovmax or 0 
+    e.hovmaxt=par2
+   elseif par1==7 then
+    e.colship=false
+   elseif par1==8 then
+    e.fir2mir=par2==1
+   end
+  elseif cmd=="ani" then
+   e.ani=anilib[par1]
+   e.anis=par2
+   e.ahold=false
+   --- ★ robustness check ---
+   e.anis=max(1,par2)
+   if e.ani==nil then
+    e.ani=anilib[1]
+   end
+   ---------------------------
+  elseif cmd=="anh" then
+   e.ani=anilib[par1]
+   e.anis=par2
+   e.age=0
+   e.ahold=true
+   --- ★ robustness check ---
+   e.anis=max(1,par2)
+   if e.ani==nil then
+    e.ani=anilib[1]
+   end
+   ---------------------------
   else
    --★ extra robustness
    return
   end
   e.bri+=3
+  if e.bri>#mybra and e.fncb then
+   e.brain,e.bri=e.fncb,e.fnci+3
+   e.fncb,e.fnci=nil,nil
+  end  
+
   if quit then return end
   dobrain(e,depth+1)
  end
@@ -1172,16 +1295,16 @@ function doenemies()
  for e in all(enemies) do
   if e.wait>0 or e.movx then
    e.wait-=1
-  elseif e.dist<=0 then
+  elseif e.dist<=0 and not e.movx then
    dobrain(e)
   end
   
   if e.movx then
    --★
    e.x+=(e.movx-e.x)/25
-   e.y+=(e.movy-e.y)/25
-   if dist(e.x,e.y,e.movx,e.movy)<1 then
-	   e.x,e.y=e.movx,e.movy
+   e.ry+=(e.movy-e.ry)/25
+   if dist(e.x,e.ry,e.movx,e.movy)<1 then
+	   e.x,e.ry=e.movx,e.movy
 	   e.movx=nil
 	  end
   else
@@ -1211,12 +1334,21 @@ function doenemies()
 	  e.sy=cos(e.ang)*e.spd
    e.dist=max(0,e.dist-abs(e.spd))
    e.x+=e.sx
-   e.y+=e.layer==1 and 0.2+e.sy or e.sy
+   e.ry+=e.layer==1 and 0.2+e.sy or e.sy
+   if e.shadylock then
+    e.shadoh-=e.sy
+   end
   end
   
-  
   e.age+=1
-
+  e.y=e.ry
+  e.shads+=e.shadspd
+  e.shadh=e.shadoh
+  if e.hovmax then
+   local hov=sin(time()/2)*e.hovmax
+   e.y+=hov
+   e.shadh-=hov
+  end
 
   local oscr=col2(e,screen)
   
@@ -1248,6 +1380,7 @@ function spawnen(eni,enx,eny)
  add(enemies,{
   x=enx,
   y=eny,
+  ry=eny,
   ani=anilib[en[1]],
   anis=en[2],
   sx=0,
@@ -1256,6 +1389,7 @@ function spawnen(eni,enx,eny)
   spd=0,
   brain=selbrain,
   bri=1,
+  mirr=1,
   age=0,
   flash=0,
   hp=en[4],
@@ -1267,6 +1401,8 @@ function spawnen(eni,enx,eny)
   dist=0,
   bulq={},
   shads=en[9],
+  shadspd=0,
+  shadoh=en[10],
   shadh=en[10],
   bul1x=en[14] or 0,
   bul1y=en[15] or 0,
@@ -1330,6 +1466,7 @@ function dist(x1,y1,x2,y2)
 end
 -->8
 --pats
+--5325
 
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
@@ -1339,12 +1476,13 @@ function makepat(pat,pang)
    age=0,
    x=0,
    y=0,
-   ang=pang,
+   ang=0,
    spd=p2,
    ani=anilib[p3],
    anis=p4,
    col=p5,
-   wait=0
+   wait=0,
+   pang=pang
   })
  elseif patype=="some" then
   if rnd()<p3 then
@@ -1390,14 +1528,8 @@ end
 
 
 function patshoot(en,pat,pang,ox,oy)
- 
- if pang==-99 then
-  pang=atan2(pspr.y-en.y,pspr.x-en.x)
- end
 
- local mybuls=makepat(pat,pang)
-
- for b in all(mybuls) do
+ for b in all(makepat(pat,pang)) do
   b.x=ox
   b.y=oy
   add(en.bulq,b)
@@ -1414,12 +1546,16 @@ function dobulq(en)
 		  r=8
 		 })
 	  b.x+=en.x
-	  b.y+=en.y
+	  b.y+=en.y 
+	  if abs(b.pang)==99 then
+    b.pang=atan2(pspr.y-b.y,pspr.x-b.x)
+   end
+   b.ang+=b.pang
 	  b.sx=sin(b.ang)*b.spd
 	  b.sy=cos(b.ang)*b.spd
 	  
    add(buls,b)
-
+   sfx(7,3)
    del(en.bulq,b)
   else
    b.wait-=1

@@ -2,7 +2,6 @@ pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
 --todo
--- direct spritemap selection
 
 function _init()
  autosave=true
@@ -122,13 +121,13 @@ function draw_edit()
 end
 
 function draw_list()
- fillp(0b11001100001100111100110000110011)
- rectfill(0,0,127,127,33)
- fillp(▒)
- line(63,0,63,127,13)
- line(0,63,127,63,13)
- fillp()
-   
+ --fillp(0b11001100001100111100110000110011)
+ --rectfill(0,0,127,127,33)
+ --fillp(▒)
+ --line(63,0,63,127,13)
+ --line(0,63,127,63,13)
+ --fillp()
+   cls(7)
  draw_menu()
  
  -- draw sprite
@@ -216,9 +215,7 @@ function update_edit()
    selspr+=1
   end
   selspr=mid(1,selspr,#data)	
- elseif cury>=11 then
-  curx=1
- else
+ elseif cury<=8 then
   curx=2
   if cury<=7 then
    --nudge
@@ -232,6 +229,17 @@ function update_edit()
 	   dirty=true
 	  end  
   end
+ elseif cury>=#menu-1 then
+  curx=1
+ elseif cury==#menu-2 then
+  curx=2
+ else
+  if btnp(⬅️) then
+   curx-=1
+  elseif btnp(➡️) then
+   curx+=1
+  end
+  curx=mid(1,curx,#menu[cury])
  end
  
  if btnp(🅾️) then
@@ -300,7 +308,32 @@ function update_edit()
 			scrollx=0
 			dirty=true
 			return   
+  elseif mymnu.cmd=="editvalnxt" then
+   _upd=upd_type
+ 	 local s=tostr(data[mymnu.cmdy][mymnu.cmdx])
+   if s=="[nil]" or s==nil then
+    s=""
+   end
+   typetxt=s
+   typecur=#typetxt+1
+   typecall=enter_editnxt
+  elseif mymnu.cmd=="addnxt" then
+   if data[selspr][7]==nil then
+    add(data[selspr],0)
+   end
+   local missing=(#data[selspr]-7)%4
+   if missing>0 then
+    missing=4-missing
+    for i=1,missing do
+    	add(data[selspr],0)
+				end
+   end
+   add(data[selspr],1)
+   add(data[selspr],0)
+   add(data[selspr],0)
+   add(data[selspr],0)
   end
+  
  end
 end
 
@@ -320,10 +353,10 @@ function update_list()
  
  local mymnu=menu[cury][curx]
  if mymnu.y+scrolly>110 then
-  scrolly-=4
+  scrolly-=32
  end
  if mymnu.y+scrolly<10 then
-  scrolly+=4
+  scrolly+=32
  end
  scrolly=min(0,scrolly)
  
@@ -476,17 +509,19 @@ function wrapmspr(si,sx,sy)
  
  local ms=myspr[si]
  
- if ms[8] then
+ local i=8
+ while ms[i] do
   --check for loops
-  if ms[8]==si then
+  if ms[i]==si then
    bgprint("[loop]",sx-6*2+1,sy-2,14)
    return
   else
-   if checkloop(ms,10) then
-    bgprint("[loop]",sx-6*2+1,sy-2,14)
+   if checkloop(myspr[ms[i]],10) then
+    bgprint("[error]",sx-6*2+1,sy-2,14)
     return   
    end
   end
+  i+=4
  end
  mspr(si,sx,sy)
 end
@@ -502,23 +537,78 @@ function checkloop(ms,depth)
  end
  
  if ms[8] then
-  return checkloop(myspr[ms[8]],depth)
+	 local i=8
+	 local loopret=false
+	 while ms[i] do
+	  if checkloop(myspr[ms[i]],depth) then
+	   return true
+	  end
+	  i+=4
+	 end
+	 return false
  else
   return false
  end
 end
 
-function mspr(si,sx,sy)
- local ms=myspr[si]
- sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5],sy-ms[6],ms[3],ms[4],ms[7]==1)
- if ms[7] and ms[7]>=2 then
-  sspr(ms[1],ms[2],ms[3],ms[4],sx-ms[5]+ms[3]-(ms[7]-2),sy-ms[6],ms[3],ms[4],true)
+--71 to 186
+
+function mspr(si,sx,sy,sudofx)
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=fx>=2 and fx or 1-fx
+  ox=-ox+ssw-1
  end
- 
- if ms[8] then
-  mspr(ms[8],sx,sy)
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
+ end
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox,sy+noy,nfx)
+  i+=4
  end
 end
+
+-- overengineered mspr
+--[[
+function mspr(si,sx,sy,sudofx)
+ local ms,sudofx=myspr[si],sudofx or 0
+ local ssx,ssy,ssw,ssh,ox,oy,fx=unpack(ms)
+ local fx=fx or 0
+ if sudofx==1 then
+  fx=mid(0,1-fx,1)
+  ox=-ox+ssw-1
+ end
+
+ sspr(ssx,ssy,ssw,ssh,sx-ox,sy-oy,ssw,ssh,fx==1)
+ if fx>=2 then
+  sspr(ssx,ssy,ssw,ssh,sx-ox+ssw-(fx-2),sy-oy,ssw,ssh,true)
+ end
+ local i=8
+ while ms[i] do
+  local noi,nox,noy,nfx=unpack(ms,i,i+3)
+  nox,noy,nfx=nox or 0,noy or 0,nfx or 0 
+  if sudofx==1 and nfx<2 then
+   nox,nfx=-nox,1-nfx
+  end
+  mspr(noi,sx+nox+(nfx==3 and 1 or 0),sy+noy,nfx)
+  if nfx>=2 then
+   nox=-nox
+   mspr(noi,sx+nox,sy+noy,1)
+  end
+  i+=4
+ end
+end
+]]--
 
 function msprc(si,sx,sy)
  local _x,_y,_w,_h,_ox,_oy,_fx,_nx=unpack(myspr[si])
@@ -599,9 +689,9 @@ function refresh_edit()
 	 y=2
  }})
  
- local lab={"  x:","  y:","wid:","hgt:"," ox:"," oy:"," fx:","nxt:"}
+ local lab={"  x:","  y:","wid:","hgt:"," ox:"," oy:"," fx:"}
  
-	for i=1,8 do
+	for i=1,7 do
 	 local s=tostr(data[selspr][i])
 	 
 	 if s==nil then
@@ -626,6 +716,46 @@ function refresh_edit()
 		}) 
  end
  
+ local nexty=4+8*7
+ local i=8
+ while data[selspr][i] do
+  local nextx=4
+  local mymn={}
+	 for j=0,3 do
+		 local s=tostr(data[selspr][i+j])
+		 if s==nil then
+		  s="[nil]"
+		 end
+
+			add(mymn,
+				{
+				 txt=s,
+				 w=spacejam(#s),
+				 cmd="editvalnxt",
+				 cmdy=selspr,
+				 cmdx=i+j,
+				 root=j==0,
+				 x=nextx,
+				 y=nexty
+				}
+			)
+			nextx+=#s*4+2
+		end
+		add(menu,mymn)
+  i+=4
+  nexty+=8
+ end
+ 
+ 
+ add(menu,{{
+	 txt="+spr",
+	 w=" ",
+	 cmd="addnxt",
+	 x=4,
+	 y=nexty
+ }})
+ nexty+=8
+ 
  local coltxt=meta[selspr][2]==0 and "off" or tostr(meta[selspr][2])
 	
 	add(menu,{
@@ -633,32 +763,38 @@ function refresh_edit()
 		 txt="col:",
 		 w=spacejam(4),
 		 x=2,
-		 y=4+9*7
+		 y=nexty
 		},{
 		 txt=coltxt,
 		 w=spacejam(#coltxt),
 		 cmd="editcol",
 		 cmdy=selspr,
 		 x=19,
-		 y=4+9*7
+		 y=nexty
 		}
 	})
 
+ nexty+=8
+ 
  add(menu,{{
 	 txt="copy",
 	 w="",
 	 cmd="copyspr",
 	 x=2,
-	 y=5+10*7
+	 y=nexty
  }})
+ 
+ nexty+=8
   
  add(menu,{{
 	 txt="delete",
 	 w="",
 	 cmd="delspr",
 	 x=2,
-	 y=6+11*7
+	 y=nexty
  }})
+ 
+ nexty+=8
 end
 
 function refresh_list()
@@ -763,20 +899,40 @@ function enter_edit()
 
  local mymnu=menu[cury][curx]
  local typeval=tonum(typetxt)
- 
- if mymnu.cmdx==8 then
-  if typeval!=nil then
-   if data[mymnu.cmdy][7]==nil then
-    data[mymnu.cmdy][7]=0
-   end
-  end
- end
 
  if typeval==nil then
   if mymnu.cmdx>=7 and mymnu.cmdx==#data[mymnu.cmdy] then
    deli(data[mymnu.cmdy],mymnu.cmdx)
   else
    data[mymnu.cmdy][mymnu.cmdx]=0
+  end
+ else
+  data[mymnu.cmdy][mymnu.cmdx]=typeval
+ end 
+
+ _upd=update_edit
+ refresh_edit()
+ dirty=true
+end
+
+function enter_editnxt()
+
+ local mymnu=menu[cury][curx]
+ local typeval=tonum(typetxt)
+ 
+ if typeval==nil then
+  if mymnu.root then
+   for i=0,3 do
+    if data[mymnu.cmdy][mymnu.cmdx] then
+	    deli(data[mymnu.cmdy],mymnu.cmdx)
+	   end
+   end
+  else
+	  if mymnu.cmdx==#data[mymnu.cmdy] then
+	   deli(data[mymnu.cmdy],mymnu.cmdx)
+	  else
+	   data[mymnu.cmdy][mymnu.cmdx]=0
+	  end
   end
  else
   data[mymnu.cmdy][mymnu.cmdx]=typeval
