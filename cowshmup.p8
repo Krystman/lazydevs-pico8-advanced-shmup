@@ -1,8 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
--- cattle crisis rc1
+-- cattle crisis v1
 -- by lazy devs
+
+-- todo
+-- kerning
 
 function _init()
  debug={}
@@ -56,7 +59,7 @@ function _init()
  
  print("「」¥•、。\n゛゜▒#$%\n&'()*,\n/:;<=>\n{|}~○█\n",40,34)
  poke(0x5f58,0)
- print("a layzy devs game",30,80)
+ print("a lazy devs game",30,80)
  print("by krystian majewski",23,86)
  
  local i=60
@@ -82,6 +85,7 @@ function hitboxmnu()
 end
 
 function gotomnu()
+ music(-1)
  mnu1=split2d "    start,0| checkpoints,-1|    about,-2"
  chkp=split2d "1-chunkers,459|2-donuts,1007|3-boss,1445"
  mnu2,mainmnu,mnucur,showextra={},mnu1,1,false
@@ -109,6 +113,7 @@ function startgame(sscr)
  lives,charge=2,0
  
  t,scroll,px,py,lastdir,shipspr,shotwait,invul,inviz,duck,score,flashship,hyper,hasbomb,enemies,schedi,mapsegi,cursegs,linger,starval,starcount,hypertally,lastscore,drawui=0,sscr,64,82,0,0,0,0,0,0,0,false,false,false,{},1,0,{},0,0,0,0,0,true
+ flyin=64
  
  pspr={
   x=0,
@@ -142,7 +147,7 @@ function _draw()
  pal(0,131,1)
  --★
  cursor(4,16)
- color(7)
+ color(8)
  for txt in all(debug) do
   print(txt)
  end
@@ -343,7 +348,7 @@ function drw_game()
 			 
 			 local fframe=anilib[1][t\3%4+1]
 			 for i=-1,2,3 do
-			  mspr(fframe,pspr.x+i,py+8)
+			  mspr(fframe,pspr.x+i,pspr.y+8)
 			 end
 			 pal()
 		 end
@@ -410,7 +415,7 @@ function drw_game()
 	 if shoutt>0 then
 	  shoutt-=1
 	  if t%4<3 then
-		  jotprint(addspace(shout),64,32,7,13,6,"c")
+		  jotprint(shout,64,32,7,13,6,"c")
 		 end
 	 end
 	 
@@ -460,11 +465,12 @@ function drw_menu()
  poke(0x5f58,0x81)
  spr(0,31,3,9,6)
  jotprint(addspace(highscore),64,85,7,1,12,"c")
+
  poke(0x5f54,0)
  poke(0x5f58,0)
 
  otprint("\^#\#1highscore",48,76,7,1)
- print("\#brc1",1,1,3,1)
+ print("\#bv1",1,1,3,1)
  
  if showextra then
 	 rectfill(8,24,120,84,1)
@@ -550,7 +556,11 @@ function upd_game()
   --anti-cobblestone
   px,py=flr(px)+0.5,flr(py)+0.5
  end
-   
+ 
+ if flyin>0 then
+  flyin-=2
+ end
+ 
  spd,lastdir=1.8,dir 
  px,py=mid(3, px+dirx[dir]*spd,123),mid(12,py+diry[dir]*spd,120)
  
@@ -560,7 +570,8 @@ function upd_game()
 
  xscroll=mid(0,(px-10)/108,1)\-0.0625
  
- pspr.x,pspr.y,pspr.ani[1]=flr(px)-xscroll,flr(py),flr(shipspr*2.4+3.5)
+ pspr.x,pspr.y,pspr.ani[1]=flr(px)-xscroll,flr(py)+flyin,flr(shipspr*2.4+3.5)
+
  pspr.ry=pspr.y
   
  --options
@@ -1216,7 +1227,7 @@ function die()
 		  callwhile=doparts
 		  music(-1,1000)
 		 elseif lives==0 then
-			 shout,shoutt="last  life",120
+			 shout,shoutt="last  life!",120
 		 end 
   end
  end
