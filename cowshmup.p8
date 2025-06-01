@@ -1,14 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
--- cattle crisis beta2
+-- cattle crisis beta3
 -- by lazy devs
 
 -- todo
 -------------------
-
--- ver 2
--- - boss shot nerf
 
 -- nice to have
 -- - focus butt doing something when not charged
@@ -17,6 +14,7 @@ __lua__
 -- - achievements
 -- - boss dropping cows
 -- - do i need bomb range?
+-- - music in star menu
 
 -- pre release
 -- - cover
@@ -42,13 +40,9 @@ function _init()
  unlock=dget(3)
  hitbox=dget(4)==0
  
- 
  menuitem(2,"clear save", function(b)
   if b&32 > 0 then
    highscore,recscr,recx,unlock,hitbox=0,0,0,0,true
-   for i=0,4 do
-    dset(i,0)
-   end
    hitboxmnu()
    gotomnu()
   end
@@ -74,7 +68,7 @@ function _init()
  
  released=false
  
- pers,shotdmg,bombdmg,cutoff,deadzone=0.85,0.7,40,90,8
+ pers,shotdmg,bombdmg,cutoff,deadzone=0.85,0.7,40,90,4
  
  screen={
   x=0,
@@ -109,10 +103,17 @@ function _init()
  gotomnu()
 end
 
+function savegame()
+ local arr={highscore,recscr,recx,unlock,hitbox and 1 or 0}
+ for i=0,4 do
+  dset(i,arr[i+1])
+ end
+end
+
 function hitboxmnu()
  hitbox = not hitbox
  menuitem(3,hitbox and "hitbox:on" or "hitbox:off",hitboxmnu)
- dset(4,hitbox and 1 or 0)
+ savegame()
  return true
 end
 
@@ -541,7 +542,7 @@ function drw_menu()
  poke(0x5f58,0)
 
  otprint("\^#\#1highscore",48,76,7,1)
- otprint("\^#\#1beta ver2",47,47,7,1)
+ otprint("\^#\#1beta ver3",47,47,7,1)
  
  local mtop=95 
  rectfill(38,mtop,96,mtop+#mainmnu*7+1,1)
@@ -662,7 +663,21 @@ function upd_game()
  dobuls(buls)
  doenemies()
  dopicks()
-
+ 
+ local beep=false
+ if hyper then
+  if charge<20 then
+   beep=t%2==0
+  elseif charge<40 then
+   beep=t%4==0
+  elseif charge<80 then
+   beep=t%8==0
+  end
+ end
+ if beep then
+  sfx(60,-1,17,1)
+ end
+ 
  --shooting
  if not hyper and not hasbomb and charge>=chargethrs then
   sfx(60,-1,24,8)
@@ -772,15 +787,15 @@ function upd_game()
  end
  if t>govertime then
   if not chkpmode then
-	  recscr=1450
-	  dset(1,recscr)
+	  recscr,recx=1450,73
+   savegame()
   end
  	gogover "all clear!"
  end
 
  if not chkpmode and unlock<#chkp and scroll>=chkp[unlock+1][2] then
   unlock+=1
-  dset(3,unlock)
+  savegame()
 		shout,shoutt="checkpoint!",90
  end
 end
@@ -809,6 +824,7 @@ function upd_menu()
  else
   released=not btn(❎) and not btn(🅾️)
  end
+ 
 end
 
 function upd_gover()
@@ -1004,12 +1020,10 @@ function gogover(txt)
 	fadeout()
 	_upd=upd_gover
 	_drw=drw_gover
-	dset(1,recscr)
-	dset(2,recx)
 	if score>highscore then
 	 highscore=score
-	 dset(0,score)
 	end
+ savegame()
 end
 -->8
 --gameplay
@@ -1078,7 +1092,7 @@ function hitenemy(e,dmg,bomb)
   return true
  else
   if e.boss and hyper then
-   starval+=0x.0001*5
+   starval+=0x.0001*10
   end 
  end
  
@@ -1279,8 +1293,6 @@ function die()
 				   ani=anilib[37]
 				  })
 			   recscr,recx=tmprec,pspr.x
-			   dset(1,recscr)
-			   dset(2,recx)
 			  end
     end
 		  lives,inviz,freeze=0,100,100
@@ -2043,7 +2055,7 @@ function hyperoff()
  hyper,invul,duck=false,60,t+30
 end
 
-function bomb(range)
+function bomb()
  sfx(62)
  
  if not hyper then
@@ -2051,23 +2063,10 @@ function bomb(range)
  end
  
  duck=t+1
- bombrange=range or 55
- bombx=pspr.x
- bomby=pspr.y
- flashship=true
- invul=0
- 
- bombrs=0
- bombrd=bombrs
- 
- bombdme=0
- 
- bombphase=1
- 
- freeze=2060
+
+ bombx,bomby,bombrange,flashship,invul,bombrs,bombrd,bombdme,bombphase,freeze,bombt,bombspd=pspr.x,pspr.y,55,true,0,0,0,0,1,2060,0,0
+
  callwhile,callback=bombwhile,bombend
- 
- bombt,bombspd=0,0
 end
 
 function bombwhile()
@@ -2091,11 +2090,7 @@ function bombwhile()
 		 bombdme+=bombspd
 		 bombspd+=0.02
 		 if bombdme>1 then
-			 bombdme=1
-			 bombphase=3
-			 fadeperc=0.5
-			 bombspd=0.2
-			 bombt=0
+			 bombdme,bombphase,fadeperc,bombspd,bombt=1,3,0.5,0.2,0
 				for b in all(buls) do
 				 delbul(b)
 				end
@@ -2121,11 +2116,8 @@ function bombend()
 		 hitenemy(e,bombdmg,true)
 		end
 	end
-	hyper=false
+	hyper,invul=false,60
 	charge=max(0,charge-chargethrs)
-	invul=60
-
-	printh(starcount.." x "..tostr(starval,0x2),"cattlestats.txt",false)
 
 end
 
@@ -2143,7 +2135,7 @@ end
 -- clouds
 
 function drawclouds()
-	for cda in all(clouds) do
+ for cda in all(clouds) do
 		for cld in all(cda) do	  
 	  for d in all(split2d("5,7|-1,6|-3,7")) do
  		 circfill(cld.x,cld.y,cld.r+d[1],d[2])
@@ -2358,8 +2350,8 @@ j333333j3j3333j3j333333j3jbbbbbbbbbbb7111111111111111111111111111111111111111111
 j3j3j3jjj333333jj3j3j3jjjbbbbbbbbbbbbb711111111111111111111111111111111111111111111111117b7117111dddddd1111eebb3j3j3j3jj3bbbbbb3
 4jjjjjj4233333324jjjjjj423bbbbbbbbbbbbb7711171177717771777177711111717177717771777111177eee7788826dddd6288811eeeejjjjjj3bbbbbbbb
 22244222233333322224422223bbbbbbbbbbbbbbb777111717171111711717111117171711171711171177e111188888e26dd62e888881111ejj3j3b3bbbbbb3
-3322223333bbbb33332222333bbbbbbbbbbbbbbbb1317117711771117117771111171717711771177711be16118888ee22666622ee88881161e3jj3bb3bbbbbb
-333223333bbbbbb333322333bbbbbbbbbbbbbbbbbb311117171711117117171111177717111717171111e1d1188e8efe29222292efe8e8811d1e3j333b33b3b3
+3322223333bbbb33332222333bbbbbbbbbbbbbbbb1317117711771117117771111171717711771117711be16118888ee22666622ee88881161e3jj3bb3bbbbbb
+333223333bbbbbb333322333bbbbbbbbbbbbbbbbbb311117171711117117171111177717111717111711e1d1188e8efe29222292efe8e8811d1e3j333b33b3b3
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb13117771777117117171111117117771717177711e1d188e8efe2219999122efe8e881d1ejj3b333b3b33
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111111111111111111111111111111111111111e1128ee8ee211111111112ee8ee8211e333333333333
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1111111111111111111111111111111111111be1188e88e2161dddddd1612e88e8811eb3b3j333333j
@@ -2378,29 +2370,29 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11111113bbbbbbbbbbbbbbbbbbbbbbbb
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11313313bbbbbbbbbbbbbbbbbbbbbbbbbbbbe1d66111122128e55e82122111166d1e23333bbbbbb3
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbe16d6d11e11112288221111e11d6d61ebbbbbbbbbbbb
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbe16dd1ebeee11111111eeebe1dd61ebbbbbb333333b
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbe111ebbb57eeeeeeeec5bbbe111ebbbbbb3b3bb3b3
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1171bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbeeebbb5771177117ccd5bbbeeebbbbbbj3bbbbbb3
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11171bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb3b3bbbbbbbbbbbbbbb5d6717117177c5d5bbbbbbbbbbj3bbbbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb171711bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb3b3b3b3bbbbbbbbbbbb55d671717777cc55d5bbbbbbbbj3b3bbbbbb3
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117131bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb5ddd6c77177777c555d5bbbbbbbj3bb3bbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111113bbbbbbbbb1111111111111111111111111111111111111bbbbb5dd511cc777777cc1155d5bbbbbbj333b33b3b3
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1131bbbbbbbbb111111111111111111111111111111111111111bbb5d5d511c77777777c11555d5bbbbbj3b333b3b33
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117171777117717171177117711771777177711bbb5ddd111cc777777cc1115555bbbbbj3333333333
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117171171171117171711171117171717171111bbb5d5d111ccc7777ccc1115555bbbbbbj3j333333j
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbe111ebbb5ceeeeeeeec5bbbe111ebbbbbb3b3bb3b3
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1171bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbeeebbb57c77777777cd5bbbeeebbbbbbj3bbbbbb3
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11171bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb3b3bbbbbbbbbbbbbbb5d6cc777777cc5d5bbbbbbbbbbj3bbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb171711bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb3b3b3b3bbbbbbbbbbbb55d6c77777777c55d5bbbbbbbbj3b3bbbbbb3
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117131bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb5ddd6cc777777cc555d5bbbbbbbj3bb3bbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111113bbbbbbbbb1111111111111111111111111111111111111bbbbb5dd511c77777777c1155d5bbbbbbj333b33b3b3
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1131bbbbbbbbb111111111111111111111111111111111111111bbb5d5d51171111177cc11555d5bbbbbj3b333b3b33
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117171777117717171177117711771777177711bbb5ddd11717117717cc1115555bbbbbj3333333333
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117171171171117171711171117171717171111bbb5d5d117171771117c1115555bbbbbbj3j333333j
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb117771171171117771777171117171771177111bbb5d5d1111cccccccc11115555bbbbbbbjj3j3j3jj
 bbbbbbbbbbbbbbbbbbbbbbbbbb3b3bbbbbbbbbbbbbbbbb117171171171717171117171117171717171111bbb5ddd51111cccccc111155555bbbbbb324jjjjjj4
 bbbbbbbbbbbbbbbbbbbbbbbb3b3b3b3bbbbbbbbbbbbbbb117171777177717171771117717711717177711bbb5d5d51111111111111155555bbbbbb3222244222
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111111111111111111111111111111111111111bbb5d5ddd611111111115555555bbbbbbb333222233
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1111111111111111111111111111111111111bbbb5ddd5d6d11111111d5555555bbbbbbbb33322333
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb5d5d5d6dddddddddd5555555bbbbbbbbbbbbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb111bbb111bb1111bbb311113b1111bb11111bbbbb5d5ddd7ccccccccc75555555bbbbbbbbbbbbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb17771b17771177771b31777711777711777771bbbb5ddd56555555555555555555bbbbbbbbbbbbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb17177117711bb1117713b11177111177171111bbbbb5d5d65dddddddddddd555555bbbbbbbbbbbbbbbb
-bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5b171771177771b177713bb17771b177711777715bbb55d565d66666dd66666d55555bbbbbbbbbbbbbbbb
-ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5d17777717717711117713b111771111771111771ddd55d65d66666d66d66666d5555bbbbbbbbbbbbbbbb
-bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5b1777771777771777771b1777771777771777771bbb5565d666666d66d666666d555bbbbbbbbbbbbbbbb
-333533353335333533353335333533353335333533353311cc151ccc11cccc1331cccc11cccc11cccc15333555d6666666dddd6666666d55bbbbbbbbbbbbbbbb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11bbb111bb11113b331111331111bb1111bbbbbb5d66666666666666666666d5bbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb11111b1111bb11111bb331113bb111bb11111bbbbb5d5ddd7ccccccccc75555555bbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb17777717777117777713b177713177711777771bbbb5ddd56555555555555555555bbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb171111b1117711117713171771177177171111bbbbb5d5d65dddddddddddd555555bbbbbbbbbbbbbbbb
+bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5b177771517771bb17713b171771b177771777715bbb55d565d66666dd66666d55555bbbbbbbbbbbbbbbb
+ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5ddd5dd11177111177117713b31777771b11771111771ddd55d65d66666d66d66666d5555bbbbbbbbbbbbbbbb
+bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5bbb5b1777771777771771j3bb1777771177771777771bbb5565d666666d66d666666d555bbbbbbbbbbbbbbbb
+3335333533353335333533353335333533353335333531cccc11cccc11cc1j333b11cc131ccc11cccc15333555d6666666dddd6666666d55bbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1111bb1111bb11bj3b333b1133b111bb1111bbbbbb5d66666666666666666666d5bbbbbbbbbbbbbbbb
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbj333333333333jbbbbbbbbbbbbbb5666666111111116666665bbbbbbbb111bbbbbb
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbj3j333333j3jbbbbbbbbbbbbbbb5666666111111116666665bbbb1111161111bbb
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbjj3j3j3jjjbbbbbbbbbbbbbbbb5666666151515156666665bbbb16dd1611661bb
@@ -2532,10 +2524,10 @@ __sfx__
 130f00000c0450c0450c0400c0400e0550e0550e0500e0500a0650a0650a0600a0600706100060140001405012050140601606016062160601606016060220000000000000000000000000000000000000000000
 1507000030513325132c5132c513385030b5000b50000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
 010100002115316130141200f1200c120161002115316130141200f1200c1200f1002115316130141200f1200c120151000c10010100001000010000100001000010000100001000010000100001000010000100
-01030000025560455606556085560a5560d5561055612556155561955620556255562d556005003757000500005003d570005003e5003f570005000050000500347703a400347503a5003a710000003e71000000
+01030000025560455606556085560a5560d5561055612556155561955620556255562d556005003757000500005003d550005003e5003f550005000050000500347703a400347503a5003a710000003e71000000
 14040000341162c14629146281362255621556205561f5561d5561c5561b556195561755614556115460b546095360c52607526075263f7003f7003f7003f7003b5003f5003f5003f5003f500000000000000000
 570300000a070050700407004070030700207001070000700007000070000700007038570046703f5600f66014660226602f660396603d6603b660376603266029660206601a600146600e6600b6000866008660
-080100001f720237302a740347503f7201c72038700017002e5702e5702e5702e5702e5602e5603e7603e7603e7503e7503e7503e7403e7403e7303e7303e7203e7203e7203e7203e7103e7103e7103e71500000
+090100001f720237302a740347503f7201c72038700017002e5702e5702e5702e5702e5602e5603e7603e7603e7503e7503e7503e7403e7403e7303e7303e7203e7203e7203e7203e7103e7103e7103e71500000
 __music__
 00 0a150857
 00 0b091757
