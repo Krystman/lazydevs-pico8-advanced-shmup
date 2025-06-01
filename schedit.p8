@@ -999,7 +999,7 @@ function genens()
    local enage=(scroll-sch[1])
    local trailage=enage+1
    
-   if trailage<=#curtrails then
+   if curtrails and trailage<=#curtrails then
 
 		  local ani=anilib[en[1] ]   
 		  local schx=sch[3]+(curtrails[trailage][1]*mirr)
