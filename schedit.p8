@@ -7,7 +7,8 @@ __lua__
 function _init()
  autosave=true
  dirty=false
- 
+ _ENV["test"]=1
+  
  --- customize here ---
  #include shmup_sched.txt
  file="shmup_sched.txt"

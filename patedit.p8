@@ -24,12 +24,6 @@ function _init()
  #include shmup_myspr.txt
  #include shmup_anilib.txt
  ----------------------
-
- for p in all(pats) do
-  if p[1]=="sprd" then
-   p[9]=0
-  end
- end
  
  debug={}
  msg={}
@@ -588,11 +582,6 @@ function refresh_pats()
 	  "anis:",
 	  "col :" 
 	 }
- elseif mypat[1]=="some" then
-	 mycap={
-	  "src :",
-	  "perc:"
-	 } 
  elseif mypat[1]=="sprd" then
 	 mycap={
 	  "src :",
@@ -727,12 +716,6 @@ function newpat(typ)
    3,
    40
   } 
- elseif typ=="some" then
-  return {
-   "some",
-   1,
-   0.5
-  }
  elseif typ=="sprd" then
   return {
    "sprd",
@@ -857,10 +840,6 @@ function makepat(pat,pang)
    col=p5,
    wait=0
   })
- elseif patype=="some" then
-  if rnd()<p3 then
-   ret=makepat(p2,pang)
-  end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do
    local rndw,rnds=flr(rnd(p7)),rnd(p6)

@@ -238,20 +238,64 @@ X Prototype Debriefing
 SIXTH GOAL: Make the Game
 ---------------------------------------------
 
-- Make a playable level until the first boss fight
+x Make a playable level until the first boss fight
 
-- Make the boss fight
+x Make the boss fight
 
-- Boss Questions
-  - Do we need boss phases?
-  - Bosss Spawning minions?
-  - Hover effect
+x Boss Questions
+  x Do we need boss phases?
+  x Bosss Spawning minions?
+  x Hover effect
 
-- Playtest
+x Playtest
 
+---------------------------------------------
+SEVENTH GOAL: Playtesting
+---------------------------------------------
 
+---------------------------------------------
+ClosedAlpha
+---------------------------------------------
+Bugs/Small Fixes
+ - -1 Lives Bugs
+ - Remove SOME
+ - RY based SHADH
 
+Visibility
+ - Tiny bullets are bad
+ - Color palette fix
+ - Tweak bullet visibility
+ - "Last Life"
 
+Hyper Tweaks
+ - Remove screen clearing bomb (remove iris)
+ - Longer iFrames on the hyper/bomb
+ - iFrames on hyper loss?
+ - Coyote time
+ - Disable body collision on Hyper
+ - Communicate Shield better
+ - "Bomb Now" Indicator
+ - Slower movement on Hyper
 
+New Stuff
+ - Better scrolling
+ - Logo
+ - Flight Recorder Feature
+ - Warning indicators
+ - Clouds?
+ - Fix Choppiness
+ - Differently Sized Explosions
+
+Bossfight
+ - Boss Health Bar
+ - Less Memo-heavy patterns
+   - Boss needs to hitable
+ - Boss drops cows
+
+Nice to Have
+ - Hitbox Indicator
+
+Remember
+ - Good manual on release
 
 

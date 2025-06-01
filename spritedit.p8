@@ -121,13 +121,13 @@ function draw_edit()
 end
 
 function draw_list()
- --fillp(0b11001100001100111100110000110011)
- --rectfill(0,0,127,127,33)
- --fillp(▒)
- --line(63,0,63,127,13)
- --line(0,63,127,63,13)
- --fillp()
-   cls(7)
+ fillp(0b11001100001100111100110000110011)
+ rectfill(0,0,127,127,33)
+ fillp(▒)
+ line(63,0,63,127,13)
+ line(0,63,127,63,13)
+ fillp()
+ 
  draw_menu()
  
  -- draw sprite

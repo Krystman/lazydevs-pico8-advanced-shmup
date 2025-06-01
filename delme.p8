@@ -2178,12 +2178,16 @@ end
 -- clouds
 
 function drawclouds()
-	for cda in all(clouds) do
+	--for cda in all(clouds) do
+	 local cda=clouds[1]
 		for cld in all(cda) do	  
 	  for d in all(split2d("5,7|-1,6|-3,7")) do
  		 circfill(cld.x,cld.y,cld.r+d[1],d[2])
 	  end  
-		 cld.y+=cld.dy
+		 cld.y+=0.1
+		 --cld.y=64
+		 --cld.x=64
+		 
 		 if cld.y>160 then
 		  del(cda,cld)
 		  if cloudt<=t then
@@ -2196,7 +2200,7 @@ function drawclouds()
 	   end
 		 end
 		end
-	end
+	--end
 end
 
 function setupclouds()

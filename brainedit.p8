@@ -58,9 +58,12 @@ function _init()
   "wai",--wait
   "asp",--animate speed
   "got",--goto
-  "fnc",--function  
-  "fir",--fire 1
+  "fnc",--function
+  "fir",--depriciated  
+  "fr1",--fire 1
   "fr2",--fire 2
+  "fr3",--fire 3 (2 flipped)
+  "fr4",--fire 2 (double shot)
   "adr",--animate direction
   "clo",--clone
   "flw",--follow
@@ -136,7 +139,11 @@ function _update60()
  t+=1
  dokeys()
  mscroll=stat(36)
- scroll+=0.2
+ 
+ if t%5==0 then
+  scroll+=1
+ end
+ 
  scroll=scroll%16
  _upd()
  
@@ -421,6 +428,12 @@ function update_brain()
  end
  if key=="3" then
   showui= not showui
+ end
+ if key=="4" then
+  patcheck()
+ end
+ if key=="5" then
+  check()
  end
  if key=="0" then
   reseten()
@@ -1190,6 +1203,8 @@ function dobrain(e,depth)
     e.loop=0
    end
   elseif cmd=="fir" then
+  
+  elseif cmd=="fr1" then
    --fire
    --- ★ robustness check ---
    if par1<1 or par1>#pats then 
@@ -1205,9 +1220,21 @@ function dobrain(e,depth)
    end
    ------------------
    patshoot(e,par1,par2,e.bul2x,e.bul2y)
-   if e.fir2mir then
-    patshoot(e,par1,par2*e.mirr*-1,e.bul2x*e.mirr*-1,e.bul2y)
+  elseif cmd=="fr3" then
+   --- ★ robustness check ---
+   if par1<1 or par1>#pats then 
+    par1=1
    end
+   ------------------
+   patshoot(e,par1,par2*e.mirr*-1,e.bul2x*e.mirr*-1,e.bul2y)
+  elseif cmd=="fr4" then
+   --- ★ robustness check ---
+   if par1<1 or par1>#pats then 
+    par1=1
+   end
+   ------------------
+   patshoot(e,par1,par2,e.bul2x,e.bul2y)
+   patshoot(e,par1,par2*e.mirr*-1,e.bul2x*e.mirr*-1,e.bul2y)
   elseif cmd=="snd" then
    sfx(par1,3)
   elseif cmd=="clo" then
@@ -1252,8 +1279,6 @@ function dobrain(e,depth)
     e.hovmaxt=par2
    elseif par1==7 then
     e.colship=false
-   elseif par1==8 then
-    e.fir2mir=par2==1
    end
   elseif cmd=="ani" then
    e.ani=anilib[par1]
@@ -1334,7 +1359,7 @@ function doenemies()
 	  e.sy=cos(e.ang)*e.spd
    e.dist=max(0,e.dist-abs(e.spd))
    e.x+=e.sx
-   e.ry+=e.layer==1 and 0.2+e.sy or e.sy
+   e.ry+=(t%5==0 and e.layer==1) and 1+e.sy or e.sy
    if e.shadylock then
     e.shadoh-=e.sy
    end
@@ -1468,6 +1493,63 @@ end
 --pats
 --5325
 
+function check()
+ local txt="check:\n"
+ for bi,mybra in pairs(brains) do
+  for i=1,#mybra,3 do
+   if mybra[i]=="fir" then
+    txt=txt.."fir in "..bi.."\n"
+   end
+   if mybra[i]=="fr2" then
+    txt=txt.."fr2 in "..bi.."\n"
+   end
+   if mybra[i]=="trg" and mybra[i+1]==8 then
+    txt=txt.."fir2mir in "..bi.."\n"
+   end
+  end
+ end
+ debug[1]=txt
+end
+
+function patcheck()
+ pch={}
+ for i=1,#pats do
+  pch[i]=false
+ end
+ 
+ for mybra in all(brains) do
+  for i=1,#mybra,3 do
+   if mybra[i]=="fr1" or mybra[i]=="fr2" or mybra[i]=="fr3" or mybra[i]=="fr4" then
+    local mypati=flr(mybra[i+1])
+    pch[mypati]=true
+    while pats[mypati][1]!="base" do
+    	local mypat=pats[mypati]
+    	if mypat[1]=="sprd" then
+    	 mypati=mypat[2]
+    	 pch[mypati]=true
+    	elseif mypat[1]=="comb" then
+				  -- wrong and jank but not useed often
+				  for i=2,5 do
+				   if mypat[i]>0 then
+				    mypati=mypat[i]
+				    pch[mypat[i]]=true
+				   end
+				  end  	
+    	end
+    end
+   end
+  end
+ end
+ 
+ local txt="unused pats\n"
+ for i=1,#pats do
+  if pch[i]==false then
+   txt=txt.."pat "..i.."\n"
+  end
+ end 
+ debug[1]=txt
+end
+
 function makepat(pat,pang)
  local mypat,ret=pats[pat],{}
  local patype,p2,p3,p4,p5,p6,p7,p8,p9=unpack(mypat)
@@ -1484,10 +1566,6 @@ function makepat(pat,pang)
    wait=0,
    pang=pang
   })
- elseif patype=="some" then
-  if rnd()<p3 then
-   ret=makepat(p2,pang)
-  end
  elseif patype=="sprd" then
   for i=p3-1,p4-1 do
    local rndw,rnds=flr(rnd(p7)),rnd(p6)
